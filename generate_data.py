@@ -1,5 +1,6 @@
 import csv
 import random
+import os
 from datetime import datetime, timedelta
 from faker import Faker
 
@@ -13,24 +14,42 @@ NUM_PRESCRIPTIONS = 100
 DAYS_OF_LOGS = 30 
 MAX_MEDS_TO_IMPORT = 100 
 
+# Define the data directory path
+DATA_DIR = 'data'
+
 def generate_csvs():
+    # Ensure the /data directory exists
+    os.makedirs(DATA_DIR, exist_ok=True)
+    
+    # Define file paths
+    product_txt_path = os.path.join(DATA_DIR, 'product.txt')
+    
     # --- 1. Parse product.txt for Medications ---
     medications = []
     seen_drugs = set()
     med_id_counter = 1
     
     try:
-        with open('product.txt', 'r', encoding='utf-8') as prod_file:
+        with open(product_txt_path, 'r', encoding='utf-8') as prod_file:
             reader = csv.DictReader(prod_file, delimiter='\t')
             for row in reader:
                 drug_name = row.get('PROPRIETARYNAME', '').strip()
+                generic_name = row.get('NONPROPRIETARYNAME', '').strip()
+                form = row.get('DOSAGEFORMNAME', '').strip()
+                route = row.get('ROUTENAME', '').strip()
+                manufacturer = row.get('LABELERNAME', '').strip()
                 unit_type = row.get('ACTIVE_INGRED_UNIT', '').strip()
                 
+                # Only process if it has a drug name and hasn't been seen yet
                 if drug_name and drug_name.upper() not in seen_drugs:
                     seen_drugs.add(drug_name.upper())
                     medications.append({
                         'MedID': med_id_counter, 
                         'DrugName': drug_name, 
+                        'GenericName': generic_name,
+                        'Form': form,
+                        'Route': route,
+                        'Manufacturer': manufacturer,
                         'UnitType': unit_type
                     })
                     med_id_counter += 1
@@ -38,14 +57,15 @@ def generate_csvs():
                     if len(medications) >= MAX_MEDS_TO_IMPORT:
                         break
     except FileNotFoundError:
-        print("Error: 'product.txt' not found. Please ensure it is in the same folder.")
+        print(f"Error: '{product_txt_path}' not found. Please ensure the file is in the /{DATA_DIR} folder.")
         return
 
-    with open('medications.csv', 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['MedID', 'DrugName', 'UnitType'])
+    meds_csv_path = os.path.join(DATA_DIR, 'medications.csv')
+    with open(meds_csv_path, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=['MedID', 'DrugName', 'GenericName', 'Form', 'Route', 'Manufacturer', 'UnitType'])
         writer.writeheader()
         writer.writerows(medications)
-    print(f"Generated medications.csv ({len(medications)} rows)")
+    print(f"Generated {meds_csv_path} ({len(medications)} rows)")
 
     # --- 2. Generate Doctors ---
     doctors = []
@@ -58,11 +78,12 @@ def generate_csvs():
             'Specialty': random.choice(specialties),
             'ContactNumber': fake.numerify('###-###-####')
         })
-    with open('doctors.csv', 'w', newline='', encoding='utf-8') as f:
+    docs_csv_path = os.path.join(DATA_DIR, 'doctors.csv')
+    with open(docs_csv_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=['DoctorID', 'FirstName', 'LastName', 'Specialty', 'ContactNumber'])
         writer.writeheader()
         writer.writerows(doctors)
-    print("Generated doctors.csv")
+    print(f"Generated {docs_csv_path}")
 
     # --- 3. Generate Pharmacies ---
     pharmacies = []
@@ -74,11 +95,12 @@ def generate_csvs():
             'Address': f"{fake.street_address()}, {fake.city()}",
             'Phone': fake.numerify('###-###-####')
         })
-    with open('pharmacies.csv', 'w', newline='', encoding='utf-8') as f:
+    pharm_csv_path = os.path.join(DATA_DIR, 'pharmacies.csv')
+    with open(pharm_csv_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=['PharmacyID', 'Name', 'Address', 'Phone'])
         writer.writeheader()
         writer.writerows(pharmacies)
-    print("Generated pharmacies.csv")
+    print(f"Generated {pharm_csv_path}")
 
     # --- 4. Generate Patients ---
     patients = []
@@ -89,11 +111,12 @@ def generate_csvs():
             'LastName': fake.last_name(),
             'Email': fake.unique.email()
         })
-    with open('patients.csv', 'w', newline='', encoding='utf-8') as f:
+    pat_csv_path = os.path.join(DATA_DIR, 'patients.csv')
+    with open(pat_csv_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=['PatientID', 'FirstName', 'LastName', 'Email'])
         writer.writeheader()
         writer.writerows(patients)
-    print("Generated patients.csv")
+    print(f"Generated {pat_csv_path}")
 
     # --- 5. Generate Prescriptions ---
     prescriptions = []
@@ -112,11 +135,12 @@ def generate_csvs():
             'StartDate': start_date.strftime('%Y-%m-%d'),
             'EndDate': end_date.strftime('%Y-%m-%d')
         })
-    with open('prescriptions.csv', 'w', newline='', encoding='utf-8') as f:
+    rx_csv_path = os.path.join(DATA_DIR, 'prescriptions.csv')
+    with open(rx_csv_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=['PrescriptionID', 'PatientID', 'MedID', 'DoctorID', 'PharmacyID', 'Dosage', 'Frequency', 'StartDate', 'EndDate'])
         writer.writeheader()
         writer.writerows(prescriptions)
-    print("Generated prescriptions.csv")
+    print(f"Generated {rx_csv_path}")
 
     # --- 6. Generate Refills ---
     refills = []
@@ -131,11 +155,12 @@ def generate_csvs():
                 'QuantityDispensed': random.choice([30, 60, 90])
             })
             refill_id += 1
-    with open('refills.csv', 'w', newline='', encoding='utf-8') as f:
+    refill_csv_path = os.path.join(DATA_DIR, 'refills.csv')
+    with open(refill_csv_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=['RefillID', 'PrescriptionID', 'RefillDate', 'QuantityDispensed'])
         writer.writeheader()
         writer.writerows(refills)
-    print("Generated refills.csv")
+    print(f"Generated {refill_csv_path}")
 
     # --- 7. Generate Dose Logs ---
     logs = []
@@ -153,11 +178,12 @@ def generate_csvs():
             })
             log_id += 1
             
-    with open('dose_logs.csv', 'w', newline='', encoding='utf-8') as f:
+    logs_csv_path = os.path.join(DATA_DIR, 'dose_logs.csv')
+    with open(logs_csv_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=['LogID', 'PrescriptionID', 'TimeTaken', 'Status'])
         writer.writeheader()
         writer.writerows(logs)
-    print("Generated dose_logs.csv")
+    print(f"Generated {logs_csv_path}")
 
 if __name__ == "__main__":
     generate_csvs()
