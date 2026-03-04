@@ -1,0 +1,101 @@
+MedID,DrugName,GenericName,Form,Route,Manufacturer,UnitType
+1,Zepbound,tirzepatide,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,mg/.5mL
+2,Humulin,Insulin human,"INJECTION, SOLUTION",PARENTERAL,Eli Lilly and Company,[iU]/mL
+3,Sterile Diluent,diluent,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,mL/mL
+4,Mounjaro,tirzepatide,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,mg/.5mL
+5,Amyvid,Florbetapir F 18,"INJECTION, SOLUTION",INTRAVENOUS,Eli Lilly and Company,mCi/mL
+6,TAUVID,Flortaucipir F-18,"INJECTION, SOLUTION",INTRAVENOUS,Eli Lilly and Company,mCi/mL
+7,Trulicity,Dulaglutide,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,mg/.5mL
+8,EMGALITY,galcanezumab-gnlm,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,mg/mL
+9,Omvoh,mirikizumab-mrkz,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,mg/mL
+10,TALTZ,ixekizumab,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,mg/mL
+11,Inluriyo,imlunestrant,"TABLET, FILM COATED",ORAL,Eli Lilly and Company,mg/1
+12,RETEVMO,selpercatinib,CAPSULE,ORAL,Eli Lilly and Company,mg/1
+13,Strattera,Atomoxetine hydrochloride,CAPSULE,ORAL,Eli Lilly and Company,mg/1
+14,Cymbalta,Duloxetine hydrochloride,"CAPSULE, DELAYED RELEASE",ORAL,Eli Lilly and Company,mg/1
+15,Zyprexa,Olanzapine,TABLET,ORAL,Eli Lilly and Company,mg/1
+16,Olumiant,baricitinib,"TABLET, FILM COATED",ORAL,Eli Lilly and Company,mg/1
+17,Evista,Raloxifene hydrochloride,TABLET,ORAL,Eli Lilly and Company,mg/1
+18,Reyvow,lasmiditan,TABLET,ORAL,Eli Lilly and Company,mg/1
+19,Cialis,Tadalafil,"TABLET, FILM COATED",ORAL,Eli Lilly and Company,mg/1
+20,Verzenio,abemaciclib,TABLET,ORAL,Eli Lilly and Company,mg/1
+21,Baricitinib,baricitinib,"TABLET, FILM COATED",ORAL,Eli Lilly and Company,mg/1
+22,JAYPIRCA,pirtobrutinib,"TABLET, COATED",ORAL,Eli Lilly and Company,mg/1
+23,Humalog,Insulin lispro,"INJECTION, SOLUTION",INTRAVENOUS; SUBCUTANEOUS,Eli Lilly and Company,[iU]/mL
+24,Alimta,Pemetrexed disodium,"INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION",INTRAVENOUS,Eli Lilly and Company,mg/20mL
+25,CYRAMZA,ramucirumab,SOLUTION,INTRAVENOUS,Eli Lilly and Company,mg/mL
+26,BASAGLAR,Insulin glargine,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,[iU]/mL
+27,Portrazza,necitumumab,SOLUTION,INTRAVENOUS,Eli Lilly and Company,mg/mL
+28,LYUMJEV,Insulin lispro-aabc,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,[iU]/mL
+29,Insulin Lispro,Insulin lispro,"INJECTION, SOLUTION",INTRAVENOUS; SUBCUTANEOUS,Eli Lilly and Company,[iU]/mL
+30,EBGLYSS,lebrikizumab-lbkz,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,mg/2mL
+31,HUMATROPE,Somatropin,KIT,INTRAMUSCULAR; SUBCUTANEOUS,Eli Lilly and Company,
+32,Insulin Lispro Protamine and Insulin Lispro Injectable Suspension,Insulin lispro,"INJECTION, SUSPENSION",SUBCUTANEOUS,Eli Lilly and Company,[iU]/mL
+33,Forteo,Teriparatide,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,ug/mL
+34,Rezvoglar,Insulin glargine-aglr,"INJECTION, SOLUTION",SUBCUTANEOUS,Eli Lilly and Company,[iU]/mL
+35,Kisunla,donanemab-azbt,"INJECTION, SOLUTION",INTRAVENOUS,Eli Lilly and Company,mg/mL
+36,Cobenfy,xanomeline and trospium chloride,"CAPSULE, COATED PELLETS",ORAL,"E.R. Squibb & Sons, L.L.C.",mg/1; mg/1
+37,HALOG,Halcinonide,SOLUTION,TOPICAL,"E.R. Squibb & Sons, L.L.C.",mg/mL
+38,KENALOG-40,TRIAMCINOLONE ACETONIDE,"INJECTION, SUSPENSION",INTRA-ARTICULAR; INTRAMUSCULAR,"E.R. Squibb & Sons, L.L.C.",mg/mL
+39,KENALOG-80,TRIAMCINOLONE ACETONIDE,"INJECTION, SUSPENSION",INTRA-ARTICULAR; INTRAMUSCULAR,"E.R. Squibb & Sons, L.L.C.",mg/mL
+40,NULOJIX,BELATACEPT,"INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION",INTRAVENOUS,"E.R. Squibb & Sons, L.L.C.",mg/1
+41,KENALOG-10,TRIAMCINOLONE ACETONIDE,"INJECTION, SUSPENSION",INTRA-ARTICULAR; INTRALESIONAL,"E.R. Squibb & Sons, L.L.C.",mg/mL
+42,SPRYCEL,dasatinib,TABLET,ORAL,"E.R. Squibb & Sons, L.L.C.",mg/1
+43,ELIQUIS,apixaban,"TABLET, FILM COATED",ORAL,"E.R. Squibb & Sons, L.L.C.",mg/1
+44,SOTYKTU,deucravacitinib,"TABLET, FILM COATED",ORAL,"E.R. Squibb & Sons, L.L.C.",mg/1
+45,ELIQUIS SPRINKLE,apixaban,CAPSULE,ORAL,"E.R. Squibb & Sons, L.L.C.",mg/1
+46,BARACLUDE,entecavir,"TABLET, FILM COATED",ORAL,"E.R. Squibb & Sons, L.L.C.",mg/1
+47,ORENCIA,abatacept,"INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION",INTRAVENOUS,"E.R. Squibb & Sons, L.L.C.",mg/15mL
+48,EMPLICITI,elotuzumab,"INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION",INTRAVENOUS,"E.R. Squibb & Sons, L.L.C.",mg/1
+49,YERVOY,ipilimumab,INJECTION,INTRAVENOUS,"E.R. Squibb & Sons, L.L.C.",mg/mL
+50,AZACTAM,AZTREONAM,"INJECTION, POWDER, FOR SOLUTION",INTRAMUSCULAR; INTRAVENOUS,"E.R. Squibb & Sons, L.L.C.",g/1
+51,OPDIVO QVANTIG,nivolumab and hyaluronidase-nvhy,"INJECTION, SOLUTION",SUBCUTANEOUS,"E.R. Squibb & Sons, L.L.C.",U/mL; mg/mL
+52,REYATAZ,ATAZANAVIR,"CAPSULE, GELATIN COATED",ORAL,"E.R. Squibb & Sons, L.L.C.",mg/1
+53,EVOTAZ,atazanavir and cobicistat,TABLET,ORAL,"E.R. Squibb & Sons, L.L.C.",mg/1; mg/1
+54,OPDIVO,nivolumab,INJECTION,INTRAVENOUS,"E.R. Squibb & Sons, L.L.C.",mg/mL
+55,Augtyro,repotrectinib,CAPSULE,ORAL,"E.R. Squibb & Sons, L.L.C.",mg/1
+56,OPDUALAG,nivolumab and relatlimab-rmbw,INJECTION,INTRAVENOUS,"E.R. Squibb & Sons, L.L.C.",mg/mL; mg/mL
+57,CellCept,Mycophenolate Mofetil,CAPSULE,ORAL,"Genentech, Inc.",mg/1
+58,Tamiflu,oseltamivir phosphate,CAPSULE,ORAL,"Genentech, Inc.",mg/1
+59,Trumenba,meningococcal group B vaccine,"INJECTION, SUSPENSION",INTRAMUSCULAR,Wyeth Pharmaceutical Division of Wyeth Holdings LLC,ug/.5mL; ug/.5mL
+60,Prevnar 20,Pneumococcal 20-valent Conjugate Vaccine,"INJECTION, SUSPENSION",INTRAMUSCULAR,Wyeth Pharmaceutical Division of Wyeth Holdings LLC,ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL
+61,BELSOMRA,suvorexant,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1
+62,STROMECTOL,ivermectin,TABLET,ORAL,Merck Sharp & Dohme LLC,mg/1
+63,JANUMET,sitagliptin and metformin hydrochloride,"TABLET, FILM COATED, EXTENDED RELEASE",ORAL,Merck Sharp & Dohme LLC,mg/1; mg/1
+64,JANUVIA,sitagliptin,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1
+65,ISENTRESS,RALTEGRAVIR,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1
+66,EMEND,aprepitant,CAPSULE,ORAL,Merck Sharp & Dohme LLC,mg/1
+67,ZOLINZA,vorinostat,CAPSULE,ORAL,Merck Sharp & Dohme LLC,mg/1
+68,ZINPLAVA,bezlotoxumab,"INJECTION, SOLUTION",INTRAVENOUS,Merck Sharp & Dohme LLC,mg/mL
+69,KEYTRUDA,pembrolizumab,"INJECTION, SOLUTION",INTRAVENOUS,Merck Sharp & Dohme LLC,mg/mL
+70,PIFELTRO,doravirine,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1
+71,ZEPATIER,elbasvir and grazoprevir,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1; mg/1
+72,PREVYMIS,LETERMOVIR,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1
+73,KEYTRUDA QLEX,pembrolizumab and berahyaluronidase alfa-pmph,"INJECTION, SOLUTION",SUBCUTANEOUS,Merck Sharp & Dohme LLC,U/mL; mg/mL
+74,PRIMAXIN,imipenem and cilastatin sodium,"INJECTION, POWDER, FOR SOLUTION",INTRAVENOUS,Merck Sharp & Dohme LLC,mg/100mL; mg/100mL
+75,CANCIDAS,CASPOFUNGIN ACETATE,"INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION",INTRAVENOUS,Merck Sharp & Dohme LLC,mg/mL
+76,INVANZ,ertapenem sodium,"INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION",INTRAMUSCULAR; INTRAVENOUS,Merck Sharp & Dohme LLC,g/1
+77,RECARBRIO,"imipenem anhydrous, cilastatin, and relebactam anhydrous","INJECTION, POWDER, FOR SOLUTION",INTRAVENOUS,Merck Sharp & Dohme LLC,mg/100mL; mg/100mL; mg/100mL
+78,GARDASIL,"Human Papillomavirus Quadrivalent (Types 6, 11, 16, and 18) Vaccine, Recombinant","INJECTION, SUSPENSION",INTRAMUSCULAR,Merck Sharp & Dohme LLC,ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL
+79,RotaTeq,"Rotavirus Vaccine, Live, Oral, Pentavalent",SOLUTION,ORAL,Merck Sharp & Dohme LLC,[iU]/2mL; [iU]/2mL; [iU]/2mL; [iU]/2mL; [iU]/2mL
+80,RECOMBIVAX HB,Hepatitis B Vaccine (Recombinant),"INJECTION, SUSPENSION",INTRAMUSCULAR; SUBCUTANEOUS,Merck Sharp & Dohme LLC,ug/.5mL
+81,VAQTA,"hepatitis A vaccine, inactivated","INJECTION, SUSPENSION",INTRAMUSCULAR,Merck Sharp & Dohme LLC,[iU]/.5mL
+82,GARDASIL 9,"Human Papillomavirus 9-valent Vaccine, Recombinant","INJECTION, SUSPENSION",INTRAMUSCULAR,Merck Sharp & Dohme LLC,ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL
+83,ProQuad,"Measles, Mumps, Rubella and Varicella Virus Vaccine Live","INJECTION, POWDER, LYOPHILIZED, FOR SUSPENSION",INTRAMUSCULAR; SUBCUTANEOUS,Merck Sharp & Dohme LLC,[TCID_50]/.5mL; [TCID_50]/.5mL; [TCID_50]/.5mL; [PFU]/.5mL
+84,ERVEBO,ZAIRE EBOLAVIRUS (STRAIN KIKWIT-95) ENVELOPE GLYCOPROTEIN,"INJECTION, SOLUTION",INTRAMUSCULAR,Merck Sharp & Dohme LLC,[PFU]/mL
+85,VAXNEUVANCE,Pneumococcal 15-valent Conjugate Vaccine CRM197 Protein adsorbed,"INJECTION, SUSPENSION",INTRAMUSCULAR,Merck Sharp & Dohme LLC,ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL
+86,CAPVAXIVE,Pneumococcal 21-valent Conjugate Vaccine,"INJECTION, SOLUTION",INTRAMUSCULAR,Merck Sharp & Dohme LLC,ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL
+87,M-M-R II,"measles, mumps, and rubella virus vaccine live","INJECTION, POWDER, LYOPHILIZED, FOR SUSPENSION",INTRAMUSCULAR; SUBCUTANEOUS,Merck Sharp & Dohme LLC,[TCID_50]/.5mL; [TCID_50]/.5mL; [TCID_50]/.5mL
+88,VARIVAX,Varicella Virus Vaccine Live,"INJECTION, POWDER, LYOPHILIZED, FOR SUSPENSION",SUBCUTANEOUS,Merck Sharp & Dohme LLC,[PFU]/.5mL
+89,PNEUMOVAX 23,pneumococcal vaccine polyvalent,"INJECTION, SOLUTION",INTRAMUSCULAR; SUBCUTANEOUS,Merck Sharp & Dohme LLC,ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL; ug/.5mL
+90,PedvaxHIB,Haemophilus b Conjugate Vaccine (Meningococcal Protein Conjugate),"INJECTION, SUSPENSION",INTRAMUSCULAR,Merck Sharp & Dohme LLC,ug/.5mL
+91,DELSTRIGO,"doravirine, lamivudine, and tenofovir disoproxil fumarate","TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1; mg/1; mg/1
+92,VERQUVO,vericiguat,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1
+93,LAGEVRIO,molnupiravir,CAPSULE,ORAL,Merck Sharp & Dohme LLC,mg/1
+94,ENFLONSIA,CLESROVIMAB,"INJECTION, SOLUTION",INTRAMUSCULAR,Merck Sharp & Dohme LLC,mg/mL
+95,WINREVAIR,SOTATERCEPT-CSRK,KIT,,Merck Sharp & Dohme LLC,
+96,WELIREG,belzutifan,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1
+97,STEGLATRO,ertugliflozin,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1
+98,STEGLUJAN,ertugliflozin and sitagliptin,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1; mg/1
+99,SEGLUROMET,ertugliflozin and metformin hydrochloride,"TABLET, FILM COATED",ORAL,Merck Sharp & Dohme LLC,mg/1; mg/1
+100,BRIDION,sugammadex,"INJECTION, SOLUTION",INTRAVENOUS,Merck Sharp & Dohme LLC,mg/mL
