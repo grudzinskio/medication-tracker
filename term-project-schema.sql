@@ -44,7 +44,7 @@ CREATE TABLE Medications (
     Form VARCHAR(100),                   -- e.g., 'INJECTION, SOLUTION'
     Route VARCHAR(100),                  -- e.g., 'SUBCUTANEOUS'
     Manufacturer VARCHAR(255),           -- e.g., 'Eli Lilly and Company'
-    UnitType VARCHAR(50)                 -- e.g., 'mg/.5mL'
+    UnitType VARCHAR(500)                -- e.g., 'mg/.5mL' (can be long for multi-valent vaccines)
 );
 
 -- ==============================================================================
