@@ -96,6 +96,12 @@ export type UpdatePatientPayload = Partial<CreatePatientPayload>;
 export type CreateMedicationPayload = Omit<Medication, 'MedID'>;
 export type UpdateMedicationPayload = Partial<CreateMedicationPayload>;
 
+export type CreateDoctorPayload = Omit<Doctor, 'DoctorID'>;
+export type UpdateDoctorPayload = Partial<CreateDoctorPayload>;
+
+export type CreatePharmacyPayload = Omit<Pharmacy, 'PharmacyID'>;
+export type UpdatePharmacyPayload = Partial<CreatePharmacyPayload>;
+
 export type CreatePrescriptionPayload = Omit<Prescription, 'PrescriptionID'>;
 export type UpdatePrescriptionPayload = Partial<CreatePrescriptionPayload>;
 

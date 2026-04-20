@@ -1,17 +1,28 @@
-import { Activity, LayoutDashboard, Pill, UserRound } from 'lucide-react';
+import {
+  Activity,
+  Building2,
+  ClipboardList,
+  LayoutDashboard,
+  Pill,
+  Stethoscope,
+  UserRound,
+} from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/patients', label: 'Patients', icon: UserRound },
-  { to: '/medications', label: 'Medications', icon: Pill },
+  { to: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
+  { to: '/patients',      label: 'Patients',       icon: UserRound },
+  { to: '/medications',   label: 'Medications',    icon: Pill },
+  { to: '/prescriptions', label: 'Prescriptions',  icon: ClipboardList },
+  { to: '/doctors',       label: 'Doctors',        icon: Stethoscope },
+  { to: '/pharmacies',    label: 'Pharmacies',     icon: Building2 },
 ];
 
 export default function Layout() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           {/* Brand */}
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 shadow-sm">
@@ -49,7 +60,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8">
         <Outlet />
       </main>
     </div>

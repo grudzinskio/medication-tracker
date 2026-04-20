@@ -11,8 +11,10 @@
 
 import type {
   AdherenceSummary,
+  CreateDoctorPayload,
   CreateMedicationPayload,
   CreatePatientPayload,
+  CreatePharmacyPayload,
   CreatePrescriptionPayload,
   Doctor,
   DoseLog,
@@ -23,8 +25,10 @@ import type {
   Prescription,
   Refill,
   ScheduledMedication,
+  UpdateDoctorPayload,
   UpdateMedicationPayload,
   UpdatePatientPayload,
+  UpdatePharmacyPayload,
   UpdatePrescriptionPayload,
 } from '../types';
 
@@ -32,8 +36,8 @@ import type {
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
-/** Set to `true` to use the real backend instead of mocks. */
-const USE_MOCK = true;
+/** Set to `true` to use the mock in-memory store instead of the real backend. */
+const USE_MOCK = false;
 
 /** Simulates a realistic network round-trip delay (ms). */
 const delay = (ms = 300) => new Promise<void>((res) => setTimeout(res, ms));
@@ -68,12 +72,12 @@ let mockMedications: Medication[] = [
   },
 ];
 
-const mockDoctors: Doctor[] = [
+let mockDoctors: Doctor[] = [
   { DoctorID: 1, FirstName: 'Sarah', LastName: 'Patel', Specialty: 'Cardiology', ContactNumber: '555-0101' },
   { DoctorID: 2, FirstName: 'James', LastName: 'Chen', Specialty: 'Endocrinology', ContactNumber: '555-0102' },
 ];
 
-const mockPharmacies: Pharmacy[] = [
+let mockPharmacies: Pharmacy[] = [
   { PharmacyID: 1, Name: 'MedPlus Pharmacy', Address: '123 Main St', Phone: '555-0200' },
   { PharmacyID: 2, Name: 'CareRx', Address: '456 Oak Ave', Phone: '555-0201' },
 ];
@@ -114,6 +118,8 @@ let mockRefills: Refill[] = [
 let nextId = {
   patient: 4,
   medication: 5,
+  doctor: 3,
+  pharmacy: 3,
   prescription: 5,
   doseLog: 7,
   refill: 3,
@@ -226,11 +232,59 @@ export async function getDoctors(): Promise<Doctor[]> {
   return apiFetch<Doctor[]>('/doctors');
 }
 
+export async function createDoctor(payload: CreateDoctorPayload): Promise<Doctor> {
+  if (USE_MOCK) {
+    await delay();
+    const created: Doctor = { DoctorID: nextId.doctor++, ...payload };
+    mockDoctors.push(created);
+    return { ...created };
+  }
+  return apiFetch<Doctor>('/doctors', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function updateDoctor(id: number, payload: UpdateDoctorPayload): Promise<Doctor> {
+  if (USE_MOCK) {
+    await delay();
+    mockDoctors = mockDoctors.map((d) => d.DoctorID === id ? { ...d, ...payload } : d);
+    return { ...mockDoctors.find((d) => d.DoctorID === id)! };
+  }
+  return apiFetch<Doctor>(`/doctors/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+export async function deleteDoctor(id: number): Promise<void> {
+  if (USE_MOCK) { await delay(); mockDoctors = mockDoctors.filter((d) => d.DoctorID !== id); return; }
+  return apiFetch<void>(`/doctors/${id}`, { method: 'DELETE' });
+}
+
 // ─── Pharmacies ───────────────────────────────────────────────────────────────
 
 export async function getPharmacies(): Promise<Pharmacy[]> {
   if (USE_MOCK) { await delay(); return [...mockPharmacies]; }
   return apiFetch<Pharmacy[]>('/pharmacies');
+}
+
+export async function createPharmacy(payload: CreatePharmacyPayload): Promise<Pharmacy> {
+  if (USE_MOCK) {
+    await delay();
+    const created: Pharmacy = { PharmacyID: nextId.pharmacy++, ...payload };
+    mockPharmacies.push(created);
+    return { ...created };
+  }
+  return apiFetch<Pharmacy>('/pharmacies', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function updatePharmacy(id: number, payload: UpdatePharmacyPayload): Promise<Pharmacy> {
+  if (USE_MOCK) {
+    await delay();
+    mockPharmacies = mockPharmacies.map((p) => p.PharmacyID === id ? { ...p, ...payload } : p);
+    return { ...mockPharmacies.find((p) => p.PharmacyID === id)! };
+  }
+  return apiFetch<Pharmacy>(`/pharmacies/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+export async function deletePharmacy(id: number): Promise<void> {
+  if (USE_MOCK) { await delay(); mockPharmacies = mockPharmacies.filter((p) => p.PharmacyID !== id); return; }
+  return apiFetch<void>(`/pharmacies/${id}`, { method: 'DELETE' });
 }
 
 // ─── Prescriptions ────────────────────────────────────────────────────────────
