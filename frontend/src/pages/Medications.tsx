@@ -17,6 +17,18 @@ import {
 } from '../services/api';
 import type { CreateMedicationPayload, Medication } from '../types';
 
+/**
+ * Multi-component drugs (e.g. vaccines) store one unit per active ingredient
+ * separated by semicolons. Show only the first component + a count badge when
+ * there are multiple so the table cell stays readable.
+ */
+function formatUnit(unitType: string | null | undefined): string {
+  if (!unitType) return '—';
+  const parts = unitType.split(';').map((s) => s.trim()).filter(Boolean);
+  if (parts.length <= 1) return unitType;
+  return `${parts[0]} ×${parts.length}`;
+}
+
 // ─── Medication form ──────────────────────────────────────────────────────────
 
 interface FormState {
@@ -300,7 +312,9 @@ export default function Medications() {
                       </span>
                     </td>
                     <td className={tdCls}>
-                      <span className="font-mono text-xs text-slate-500">{m.UnitType}</span>
+                      <span className="font-mono text-xs text-slate-500" title={m.UnitType || undefined}>
+                        {formatUnit(m.UnitType)}
+                      </span>
                     </td>
                     <td className={tdCls}>
                       <span className="text-slate-500">{m.Manufacturer || '—'}</span>
