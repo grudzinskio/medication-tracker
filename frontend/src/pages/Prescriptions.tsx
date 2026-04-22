@@ -16,6 +16,7 @@ import {
   createPrescription,
   createRefill,
   deletePrescription,
+  getDoctor,
   getDoctors,
   getMedications,
   getPatients,
@@ -33,6 +34,7 @@ import type {
   Prescription,
   Refill,
 } from '../types';
+import { useAuth } from '../auth/AuthContext';
 
 // ─── Prescription form ────────────────────────────────────────────────────────
 
@@ -61,16 +63,24 @@ interface PrescriptionFormProps {
   onSubmit: (data: PrescriptionFormState) => Promise<void>;
   onCancel: () => void;
   submitLabel: string;
+  lockedDoctorId?: number | null;
 }
 
 function PrescriptionForm({
   initial = emptyPrescriptionForm,
   patients, medications, doctors, pharmacies,
   onSubmit, onCancel, submitLabel,
+  lockedDoctorId = null,
 }: PrescriptionFormProps) {
   const [form, setForm] = useState<PrescriptionFormState>(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // If doctor is locked (doctor role), enforce it in the form state
+  useEffect(() => {
+    if (!lockedDoctorId) return;
+    setForm((prev) => ({ ...prev, DoctorID: String(lockedDoctorId) }));
+  }, [lockedDoctorId]);
 
   function set(field: keyof PrescriptionFormState) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -124,7 +134,14 @@ function PrescriptionForm({
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Doctor" required>
-          <select aria-label="Doctor" required value={form.DoctorID} onChange={set('DoctorID')} className={inputCls}>
+          <select
+            aria-label="Doctor"
+            required
+            value={form.DoctorID}
+            onChange={set('DoctorID')}
+            disabled={Boolean(lockedDoctorId)}
+            className={inputCls}
+          >
             <option value="" disabled>Select doctor…</option>
             {doctors.map((d) => (
               <option key={d.DoctorID} value={d.DoctorID}>
@@ -293,6 +310,7 @@ type ModalMode =
   | { type: 'refills'; prescription: Prescription };
 
 export default function Prescriptions() {
+  const { user } = useAuth();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
@@ -305,23 +323,42 @@ export default function Prescriptions() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      getPrescriptions(),
-      getPatients(),
-      getMedications(),
-      getDoctors(),
-      getPharmacies(),
-    ])
-      .then(([rxs, pts, meds, docs, pharms]) => {
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const isDoctor = Boolean(user?.roles.includes('doctor'));
+        const doctorId = user?.doctorId ?? null;
+
+        const [rxs, pts, meds, pharms] = await Promise.all([
+          getPrescriptions(),
+          getPatients(),
+          getMedications(),
+          getPharmacies(),
+        ]);
+
         setPrescriptions(rxs);
         setPatients(pts);
         setMedications(meds);
-        setDoctors(docs);
         setPharmacies(pharms);
-      })
-      .catch(() => setError('Failed to load data.'))
-      .finally(() => setLoading(false));
-  }, []);
+
+        if (isDoctor && doctorId) {
+          const doc = await getDoctor(doctorId);
+          setDoctors([doc]);
+        } else {
+          const docs = await getDoctors();
+          setDoctors(docs);
+        }
+      } catch {
+        setError('Failed to load data.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [user?.doctorId, user?.roles]);
 
   const patientMap  = useMemo(() => new Map(patients.map((p) => [p.PatientID, p])),    [patients]);
   const medMap      = useMemo(() => new Map(medications.map((m) => [m.MedID, m])),      [medications]);
@@ -512,6 +549,7 @@ export default function Prescriptions() {
           <PrescriptionForm
             patients={patients} medications={medications} doctors={doctors} pharmacies={pharmacies}
             onSubmit={handleAdd} onCancel={() => setModal(null)} submitLabel="Add Prescription"
+            lockedDoctorId={user?.roles.includes('doctor') ? user.doctorId : null}
           />
         </Modal>
       )}
@@ -534,6 +572,7 @@ export default function Prescriptions() {
             onSubmit={(data) => handleEdit(modal.prescription, data)}
             onCancel={() => setModal(null)}
             submitLabel="Save Changes"
+            lockedDoctorId={user?.roles.includes('doctor') ? user.doctorId : null}
           />
         </Modal>
       )}

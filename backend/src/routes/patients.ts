@@ -1,14 +1,34 @@
 import { Router, Request, Response } from 'express';
 import { fn, col, where as seqWhere, Op } from 'sequelize';
 import { Doctor, DoseLog, Medication, Patient, Prescription } from '../models';
+import { authenticateJWT, requireRole, requireSelfPatientOrAdmin } from '../auth/middleware';
 
 const router = Router();
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', authenticateJWT, requireRole('admin', 'doctor'), async (_req: Request, res: Response) => {
   try {
-    const patients = await Patient.findAll({ order: [['LastName', 'ASC'], ['FirstName', 'ASC']] });
+    const user = _req.user!;
+    const where: any = {};
+
+    // Doctors should only see their own patients (i.e., patients with at least one prescription by that doctor).
+    if (user.roles.includes('doctor')) {
+      const doctorId = user.doctorId;
+      if (!doctorId) return res.json([]);
+      where.PatientID = {
+        [Op.in]: (await Prescription.findAll({
+          where: { DoctorID: doctorId },
+          attributes: [[fn('DISTINCT', col('PatientID')), 'PatientID']],
+          raw: true,
+        })).map((r: any) => r.PatientID as number),
+      };
+    }
+
+    const patients = await Patient.findAll({
+      where,
+      order: [['LastName', 'ASC'], ['FirstName', 'ASC']],
+    });
     res.json(patients);
   } catch (err) {
     console.error(err);
@@ -16,7 +36,7 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 });
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticateJWT, requireSelfPatientOrAdmin('id'), async (req: Request, res: Response) => {
   try {
     const patient = await Patient.findByPk(req.params.id);
     if (!patient) return res.status(404).json({ error: 'Patient not found' });
@@ -27,7 +47,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authenticateJWT, requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const { FirstName, LastName, Email } = req.body;
     if (!FirstName || !LastName || !Email) {
@@ -44,7 +64,7 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', authenticateJWT, requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const patient = await Patient.findByPk(req.params.id);
     if (!patient) return res.status(404).json({ error: 'Patient not found' });
@@ -59,7 +79,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', authenticateJWT, requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const patient = await Patient.findByPk(req.params.id);
     if (!patient) return res.status(404).json({ error: 'Patient not found' });
@@ -73,7 +93,15 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
 // ─── Daily Schedule ───────────────────────────────────────────────────────────
 
-router.get('/:id/daily-schedule', async (req: Request, res: Response) => {
+router.get(
+  '/:id/daily-schedule',
+  authenticateJWT,
+  (req, res, next) => {
+    // Patients: only self. Doctors/Admins: any patient.
+    if (req.user?.roles.includes('doctor') || req.user?.roles.includes('admin')) return next();
+    return requireSelfPatientOrAdmin('id')(req, res, next);
+  },
+  async (req: Request, res: Response) => {
   try {
     const patientId = parseInt(req.params.id, 10);
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
@@ -123,11 +151,20 @@ router.get('/:id/daily-schedule', async (req: Request, res: Response) => {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
-});
+  },
+);
 
 // ─── Adherence Summary ────────────────────────────────────────────────────────
 
-router.get('/:id/adherence', async (req: Request, res: Response) => {
+router.get(
+  '/:id/adherence',
+  authenticateJWT,
+  (req, res, next) => {
+    // Patients: only self. Doctors/Admins: any patient.
+    if (req.user?.roles.includes('doctor') || req.user?.roles.includes('admin')) return next();
+    return requireSelfPatientOrAdmin('id')(req, res, next);
+  },
+  async (req: Request, res: Response) => {
   try {
     const patientId = parseInt(req.params.id, 10);
     const from = (req.query.from as string) ?? new Date().toISOString().slice(0, 10);
@@ -171,6 +208,7 @@ router.get('/:id/adherence', async (req: Request, res: Response) => {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
-});
+  },
+);
 
 export default router;

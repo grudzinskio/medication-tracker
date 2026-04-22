@@ -6,6 +6,7 @@ import type { DoseLog, DoseStatus, ScheduledMedication } from '../types';
 interface Props {
   med: ScheduledMedication;
   onLogged: (prescriptionId: number, log: DoseLog) => void;
+  canLog?: boolean;
 }
 
 const statusConfig: Record<DoseStatus, { label: string; classes: string; icon: React.ReactNode }> = {
@@ -26,7 +27,7 @@ const statusConfig: Record<DoseStatus, { label: string; classes: string; icon: R
   },
 };
 
-export default function MedicationCard({ med, onLogged }: Props) {
+export default function MedicationCard({ med, onLogged, canLog = true }: Props) {
   const [loading, setLoading] = useState<DoseStatus | null>(null);
 
   async function handleLog(status: DoseStatus) {
@@ -97,6 +98,8 @@ export default function MedicationCard({ med, onLogged }: Props) {
               minute: '2-digit',
             })}
           </p>
+        ) : !canLog ? (
+          <p className="text-xs text-slate-400">View only</p>
         ) : (
           <>
             <button

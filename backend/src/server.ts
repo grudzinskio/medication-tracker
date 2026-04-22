@@ -7,6 +7,7 @@ import cors from 'cors';
 import express from 'express';
 import sequelize from './db/sequelize';
 import './models/index'; // initialises models + associations
+import authRouter from './routes/auth';
 import doctorsRouter from './routes/doctors';
 import doseLogsRouter from './routes/doseLogs';
 import medicationsRouter from './routes/medications';
@@ -22,6 +23,7 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+app.use('/api/auth',          authRouter);
 app.use('/api/patients',      patientsRouter);
 app.use('/api/medications',   medicationsRouter);
 app.use('/api/doctors',       doctorsRouter);

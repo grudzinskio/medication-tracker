@@ -6,19 +6,94 @@ import Medications from './pages/Medications';
 import Patients from './pages/Patients';
 import Pharmacies from './pages/Pharmacies';
 import Prescriptions from './pages/Prescriptions';
+import Login from './pages/Login';
+import { useAuth } from './auth/AuthContext';
+import { setAuthToken } from './services/api';
+import { useEffect } from 'react';
+import RequireRole from './auth/RequireRole';
+import { useMemo } from 'react';
+
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { token } = useAuth();
+  if (!token) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 export default function App() {
+  const { token, user } = useAuth();
+
+  useEffect(() => {
+    setAuthToken(token);
+  }, [token]);
+
+  const homePath = useMemo(() => {
+    const roles = user?.roles ?? [];
+    if (roles.includes('admin')) return '/patients';
+    if (roles.includes('doctor')) return '/dashboard';
+    return '/dashboard';
+  }, [user?.roles]);
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard"     element={<Dashboard />} />
-          <Route path="patients"      element={<Patients />} />
-          <Route path="medications"   element={<Medications />} />
-          <Route path="prescriptions" element={<Prescriptions />} />
-          <Route path="doctors"       element={<Doctors />} />
-          <Route path="pharmacies"    element={<Pharmacies />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <Layout />
+            </RequireAuth>
+          }
+        >
+          <Route index element={<Navigate to={homePath} replace />} />
+          <Route
+            path="dashboard"
+            element={
+              <RequireRole anyOf={['admin', 'patient', 'doctor']}>
+                <Dashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="patients"
+            element={
+              <RequireRole anyOf={['admin', 'doctor']}>
+                <Patients />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="medications"
+            element={
+              <RequireRole anyOf={['admin', 'doctor']}>
+                <Medications />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="prescriptions"
+            element={
+              <RequireRole anyOf={['admin', 'doctor']}>
+                <Prescriptions />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="doctors"
+            element={
+              <RequireRole anyOf={['admin']}>
+                <Doctors />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="pharmacies"
+            element={
+              <RequireRole anyOf={['admin', 'doctor']}>
+                <Pharmacies />
+              </RequireRole>
+            }
+          />
         </Route>
       </Routes>
     </BrowserRouter>

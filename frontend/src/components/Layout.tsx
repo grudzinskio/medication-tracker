@@ -7,7 +7,8 @@ import {
   Stethoscope,
   UserRound,
 } from 'lucide-react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 
 const navItems = [
   { to: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
@@ -19,6 +20,21 @@ const navItems = [
 ];
 
 export default function Layout() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const roles = user?.roles ?? [];
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (roles.includes('admin')) return true;
+    if (roles.includes('doctor')) {
+      // Doctors can work with prescribing + reference data
+      return ['/dashboard', '/prescriptions', '/medications', '/pharmacies'].includes(item.to);
+    }
+    // Patients only get their dashboard experience
+    return ['/dashboard'].includes(item.to);
+  });
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur-sm">
@@ -37,7 +53,7 @@ export default function Layout() {
           {/* Primary nav */}
           <nav aria-label="Primary">
             <ul className="flex items-center gap-1">
-              {navItems.map(({ to, label, icon: Icon }) => (
+              {visibleNavItems.map(({ to, label, icon: Icon }) => (
                 <li key={to}>
                   <NavLink
                     to={to}
@@ -57,6 +73,24 @@ export default function Layout() {
               ))}
             </ul>
           </nav>
+
+          <div className="flex items-center gap-3">
+            {user ? (
+              <div className="hidden text-right sm:block">
+                <div className="text-xs font-medium text-slate-800">{user.username}</div>
+                <div className="text-[11px] text-slate-500">{user.roles.join(', ')}</div>
+              </div>
+            ) : null}
+            <button
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+              onClick={() => {
+                logout();
+                navigate('/login', { replace: true });
+              }}
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 

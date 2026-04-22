@@ -116,7 +116,20 @@ def truncate_all(conn):
     config = get_db_config()
     db = config["database"]
     # Reverse load order = children first
-    tables = ["Dose_Logs", "Refills", "Prescriptions", "Doctors", "Pharmacies", "Patients", "Medications"]
+    tables = [
+        # Auth / RBAC
+        "UserRoles",
+        "Users",
+        "Roles",
+        # App tables
+        "Dose_Logs",
+        "Refills",
+        "Prescriptions",
+        "Doctors",
+        "Pharmacies",
+        "Patients",
+        "Medications",
+    ]
     with conn.cursor() as cur:
         cur.execute("SET FOREIGN_KEY_CHECKS = 0")
         for table in tables:
@@ -166,6 +179,75 @@ def load_all_data(conn):
     print(f"Total rows loaded: {total}")
 
 
+def seed_auth_demo_users(conn):
+    """
+    Seed demo auth users + roles.
+
+    Per project requirements: every account password is exactly 'password'.
+    Patients: username = Patients.Email
+    Doctors:  username = doctor<DoctorID>
+    Admin:    username = admin
+    """
+    with conn.cursor() as cur:
+        # Roles
+        cur.execute("INSERT IGNORE INTO Roles (Name) VALUES ('patient'), ('doctor'), ('admin')")
+
+        cur.execute("SELECT RoleID, Name FROM Roles")
+        role_map = {name: role_id for (role_id, name) in cur.fetchall()}
+
+        # Admin user
+        cur.execute(
+            """
+            INSERT IGNORE INTO Users (Username, Password, UserType, PatientID, DoctorID)
+            VALUES ('admin', 'password', 'admin', NULL, NULL)
+            """
+        )
+        cur.execute("SELECT UserID FROM Users WHERE Username = 'admin' LIMIT 1")
+        admin_user_id = cur.fetchone()[0]
+        cur.execute(
+            "INSERT IGNORE INTO UserRoles (UserID, RoleID) VALUES (%s, %s)",
+            (admin_user_id, role_map["admin"]),
+        )
+
+        # Patient users
+        cur.execute("SELECT PatientID, Email FROM Patients")
+        for patient_id, email in cur.fetchall():
+            cur.execute(
+                """
+                INSERT IGNORE INTO Users (Username, Password, UserType, PatientID, DoctorID)
+                VALUES (%s, 'password', 'patient', %s, NULL)
+                """,
+                (email, patient_id),
+            )
+            cur.execute("SELECT UserID FROM Users WHERE Username = %s LIMIT 1", (email,))
+            user_id = cur.fetchone()[0]
+            cur.execute(
+                "INSERT IGNORE INTO UserRoles (UserID, RoleID) VALUES (%s, %s)",
+                (user_id, role_map["patient"]),
+            )
+
+        # Doctor users
+        cur.execute("SELECT DoctorID FROM Doctors")
+        for (doctor_id,) in cur.fetchall():
+            username = f"doctor{doctor_id}"
+            cur.execute(
+                """
+                INSERT IGNORE INTO Users (Username, Password, UserType, PatientID, DoctorID)
+                VALUES (%s, 'password', 'doctor', NULL, %s)
+                """,
+                (username, doctor_id),
+            )
+            cur.execute("SELECT UserID FROM Users WHERE Username = %s LIMIT 1", (username,))
+            user_id = cur.fetchone()[0]
+            cur.execute(
+                "INSERT IGNORE INTO UserRoles (UserID, RoleID) VALUES (%s, %s)",
+                (user_id, role_map["doctor"]),
+            )
+
+    conn.commit()
+    print("Seeded demo auth users (admin/patients/doctors).")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Load CSV data into Medication_Tracker MySQL database."
@@ -188,6 +270,8 @@ def main():
         try:
             print("Loading CSV data...")
             load_all_data(conn)
+            print("Seeding auth demo users...")
+            seed_auth_demo_users(conn)
         finally:
             conn.close()
     else:
@@ -197,6 +281,8 @@ def main():
             truncate_all(conn)
             print("Loading CSV data...")
             load_all_data(conn)
+            print("Seeding auth demo users...")
+            seed_auth_demo_users(conn)
         finally:
             conn.close()
 

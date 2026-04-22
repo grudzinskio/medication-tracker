@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import MedicationCard from '../components/MedicationCard';
 import { getAdherence, getDailySchedule, getPatients } from '../services/api';
 import type { AdherenceSummary, DoseLog, Patient, ScheduledMedication } from '../types';
+import { useAuth } from '../auth/AuthContext';
 
 // Returns YYYY-MM-DD for a date offset by `daysAgo` from today (UTC)
 function utcDateString(daysAgo = 0): string {
@@ -24,6 +25,7 @@ const ADHERENCE_RANGES = [
 ];
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [schedule, setSchedule] = useState<ScheduledMedication[]>([]);
@@ -78,6 +80,8 @@ export default function Dashboard() {
       ),
     );
   }, []);
+
+  const canLogDose = user?.roles.includes('patient') || user?.roles.includes('admin');
 
   const selectedPatient = patients.find((p) => p.PatientID === selectedPatientId);
 
@@ -217,7 +221,12 @@ export default function Dashboard() {
       {!scheduleLoading && !error && schedule.length > 0 && (
         <div className="space-y-3">
           {schedule.map((med) => (
-            <MedicationCard key={med.PrescriptionID} med={med} onLogged={handleLogged} />
+            <MedicationCard
+              key={med.PrescriptionID}
+              med={med}
+              onLogged={handleLogged}
+              canLog={canLogDose}
+            />
           ))}
         </div>
       )}

@@ -31,6 +31,7 @@ import type {
   UpdatePharmacyPayload,
   UpdatePrescriptionPayload,
 } from '../types';
+import type { AuthUser } from '../auth/types';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -41,6 +42,14 @@ const USE_MOCK = false;
 
 /** Simulates a realistic network round-trip delay (ms). */
 const delay = (ms = 300) => new Promise<void>((res) => setTimeout(res, ms));
+
+// ─── Auth token handling ───────────────────────────────────────────────────────
+
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
 
 // ─── Mock data stores ─────────────────────────────────────────────────────────
 // These are module-level arrays that act as an in-memory "database".
@@ -129,7 +138,11 @@ let nextId = {
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(options?.headers ?? {}),
+    },
     ...options,
   });
   if (!res.ok) {
@@ -137,6 +150,15 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(`API ${res.status}: ${body}`);
   }
   return res.json() as Promise<T>;
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export async function login(username: string, password: string): Promise<{ token: string; user: AuthUser }> {
+  return apiFetch<{ token: string; user: AuthUser }>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
 }
 
 // ─── Patients ─────────────────────────────────────────────────────────────────
@@ -230,6 +252,16 @@ export async function deleteMedication(id: number): Promise<void> {
 export async function getDoctors(): Promise<Doctor[]> {
   if (USE_MOCK) { await delay(); return [...mockDoctors]; }
   return apiFetch<Doctor[]>('/doctors');
+}
+
+export async function getDoctor(id: number): Promise<Doctor> {
+  if (USE_MOCK) {
+    await delay();
+    const d = mockDoctors.find((x) => x.DoctorID === id);
+    if (!d) throw new Error(`Doctor ${id} not found`);
+    return { ...d };
+  }
+  return apiFetch<Doctor>(`/doctors/${id}`);
 }
 
 export async function createDoctor(payload: CreateDoctorPayload): Promise<Doctor> {

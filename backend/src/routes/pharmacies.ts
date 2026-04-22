@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { Pharmacy } from '../models';
+import { authenticateJWT, requireRole } from '../auth/middleware';
 
 const router = Router();
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', authenticateJWT, requireRole('admin', 'doctor'), async (_req: Request, res: Response) => {
   try {
     const pharmacies = await Pharmacy.findAll({ order: [['Name', 'ASC']] });
     res.json(pharmacies);
@@ -13,7 +14,7 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 });
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticateJWT, requireRole('admin', 'doctor'), async (req: Request, res: Response) => {
   try {
     const pharmacy = await Pharmacy.findByPk(req.params.id);
     if (!pharmacy) return res.status(404).json({ error: 'Pharmacy not found' });
@@ -24,7 +25,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authenticateJWT, requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const { Name, Address, Phone } = req.body;
     if (!Name) {
@@ -38,7 +39,7 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', authenticateJWT, requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const pharmacy = await Pharmacy.findByPk(req.params.id);
     if (!pharmacy) return res.status(404).json({ error: 'Pharmacy not found' });
@@ -50,7 +51,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', authenticateJWT, requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const pharmacy = await Pharmacy.findByPk(req.params.id);
     if (!pharmacy) return res.status(404).json({ error: 'Pharmacy not found' });

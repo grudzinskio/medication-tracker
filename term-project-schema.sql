@@ -36,6 +36,44 @@ CREATE TABLE Patients (
     Email VARCHAR(100) UNIQUE NOT NULL
 );
 
+-- ==============================================================================
+-- Auth / RBAC Tables (School demo)
+-- ==============================================================================
+
+-- Roles Table
+CREATE TABLE Roles (
+    RoleID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(50) UNIQUE NOT NULL
+);
+
+-- Users Table
+-- NOTE: For this school demo we store the password as plain text because you
+-- explicitly requested password=password for all accounts.
+CREATE TABLE Users (
+    UserID INT AUTO_INCREMENT PRIMARY KEY,
+    Username VARCHAR(100) UNIQUE NOT NULL,
+    Password VARCHAR(255) NOT NULL,
+    UserType VARCHAR(20) NOT NULL CHECK (UserType IN ('patient', 'doctor', 'admin')),
+    PatientID INT NULL,
+    DoctorID INT NULL,
+
+    CONSTRAINT fk_users_patient
+        FOREIGN KEY (PatientID) REFERENCES Patients(PatientID) ON DELETE SET NULL,
+    CONSTRAINT fk_users_doctor
+        FOREIGN KEY (DoctorID) REFERENCES Doctors(DoctorID) ON DELETE SET NULL
+);
+
+-- UserRoles Table (M:N)
+CREATE TABLE UserRoles (
+    UserID INT NOT NULL,
+    RoleID INT NOT NULL,
+    PRIMARY KEY (UserID, RoleID),
+    CONSTRAINT fk_userroles_user
+        FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
+    CONSTRAINT fk_userroles_role
+        FOREIGN KEY (RoleID) REFERENCES Roles(RoleID) ON DELETE CASCADE
+);
+
 -- Medications Table (Expanded to include FDA dataset columns)
 CREATE TABLE Medications (
     MedID INT AUTO_INCREMENT PRIMARY KEY,
@@ -104,6 +142,9 @@ CREATE TABLE Dose_Logs (
 
 -- Index for quick patient lookups by email (useful for user login later)
 CREATE INDEX idx_patient_email ON Patients(Email);
+
+-- Index for quick username logins
+CREATE INDEX idx_users_username ON Users(Username);
 
 -- Index for searching medications quickly by their proprietary name
 CREATE INDEX idx_med_name ON Medications(DrugName);

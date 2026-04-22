@@ -9,25 +9,14 @@ A full-stack web app for managing patient prescriptions and tracking medication 
 ## 1. MySQL setup
 
 1. **Copy the env template and fill in your credentials:**
-   ```bash
+  ```bash
    copy .env.example .env
-   ```
+  ```
    Edit `.env` — set `MYSQL_USER`, `MYSQL_PASSWORD`, and optionally `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE` (default: `Medication_Tracker`).
-
 2. **Install Python dependencies:**
-   ```bash
+  ```bash
    pip install -r requirements.txt
-   ```
-
-3. **Load the database:**
-   - **First time / full reset** (drops DB, applies schema, loads all CSVs):
-     ```bash
-     python load_data.py --reset
-     ```
-   - **Reload data only** (truncates tables, re-loads CSVs):
-     ```bash
-     python load_data.py
-     ```
+  ```
 
 ---
 
@@ -59,14 +48,16 @@ npm run dev       # starts the UI at http://localhost:5173
 
 ## Pages
 
-| Page | Route | Description |
-|---|---|---|
-| Dashboard | `/dashboard` | Daily medication schedule per patient + adherence % panel |
-| Patients | `/patients` | Full CRUD for patient records |
-| Medications | `/medications` | Full CRUD for the medication catalog |
+
+| Page          | Route            | Description                                                |
+| ------------- | ---------------- | ---------------------------------------------------------- |
+| Dashboard     | `/dashboard`     | Daily medication schedule per patient + adherence % panel  |
+| Patients      | `/patients`      | Full CRUD for patient records                              |
+| Medications   | `/medications`   | Full CRUD for the medication catalog                       |
 | Prescriptions | `/prescriptions` | Assign meds to patients; view/add refills per prescription |
-| Doctors | `/doctors` | Full CRUD for prescribing doctors |
-| Pharmacies | `/pharmacies` | Full CRUD for pharmacies |
+| Doctors       | `/doctors`       | Full CRUD for prescribing doctors                          |
+| Pharmacies    | `/pharmacies`    | Full CRUD for pharmacies                                   |
+
 
 ## Project structure
 
@@ -92,3 +83,16 @@ medication-tracker/
     │   └── types/
     └── package.json
 ```
+
+**Load the database:**
+If you want to import the data into your own database use or reset
+
+- **First time / full reset** (drops DB, applies schema, loads all CSVs):
+  ```bash
+  python load_data.py --reset
+  ```
+- **Reload data only** (truncates tables, re-loads CSVs):
+  ```bash
+  python load_data.py
+  ```
+
