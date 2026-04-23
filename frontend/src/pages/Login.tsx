@@ -4,8 +4,10 @@ import { useAuth } from '../auth/AuthContext';
 import { login as apiLogin, setAuthToken } from '../services/api';
 
 function roleHome(roles: string[]) {
-  if (roles.includes('admin')) return '/patients';
-  if (roles.includes('doctor')) return '/prescriptions';
+  if (roles.includes('admin')) return '/admin';
+  if (roles.includes('doctor')) return '/doctor-dashboard';
+  if (roles.includes('pharmacy_tech')) return '/pharmacy-tech';
+  if (roles.includes('secretary')) return '/secretary';
   return '/dashboard';
 }
 
@@ -15,7 +17,7 @@ export default function Login() {
   const location = useLocation();
 
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('password');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -89,10 +91,6 @@ export default function Login() {
             >
               {submitting ? 'Signing in…' : 'Sign in'}
             </button>
-
-            <div className="text-xs text-slate-500">
-              Demo password for all accounts is <span className="font-mono">password</span>.
-            </div>
           </form>
         </div>
       </div>

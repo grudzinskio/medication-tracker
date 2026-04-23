@@ -190,7 +190,10 @@ def seed_auth_demo_users(conn):
     """
     with conn.cursor() as cur:
         # Roles
-        cur.execute("INSERT IGNORE INTO Roles (Name) VALUES ('patient'), ('doctor'), ('admin')")
+        cur.execute(
+            "INSERT IGNORE INTO Roles (Name) VALUES "
+            "('patient'), ('doctor'), ('admin'), ('pharmacy_tech'), ('secretary')"
+        )
 
         cur.execute("SELECT RoleID, Name FROM Roles")
         role_map = {name: role_id for (role_id, name) in cur.fetchall()}
@@ -208,6 +211,26 @@ def seed_auth_demo_users(conn):
             "INSERT IGNORE INTO UserRoles (UserID, RoleID) VALUES (%s, %s)",
             (admin_user_id, role_map["admin"]),
         )
+
+        # Staff demo users (non-admin)
+        staff_users = [
+            ("pharmacytech", "pharmacy_tech"),
+            ("secretary", "secretary"),
+        ]
+        for username, role in staff_users:
+            cur.execute(
+                """
+                INSERT IGNORE INTO Users (Username, Password, UserType, PatientID, DoctorID)
+                VALUES (%s, 'password', 'staff', NULL, NULL)
+                """,
+                (username,),
+            )
+            cur.execute("SELECT UserID FROM Users WHERE Username = %s LIMIT 1", (username,))
+            staff_user_id = cur.fetchone()[0]
+            cur.execute(
+                "INSERT IGNORE INTO UserRoles (UserID, RoleID) VALUES (%s, %s)",
+                (staff_user_id, role_map[role]),
+            )
 
         # Patient users
         cur.execute("SELECT PatientID, Email FROM Patients")

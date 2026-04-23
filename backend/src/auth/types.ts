@@ -1,6 +1,6 @@
-export type RoleName = 'patient' | 'doctor' | 'admin';
+export type RoleName = 'patient' | 'doctor' | 'admin' | 'pharmacy_tech' | 'secretary';
 
-export type UserType = 'patient' | 'doctor' | 'admin';
+export type UserType = 'patient' | 'doctor' | 'admin' | 'staff';
 
 export type AuthUser = {
   userId: number;

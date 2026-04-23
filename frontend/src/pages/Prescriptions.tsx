@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import Modal from '../components/Modal';
+import { useLocation } from 'react-router-dom';
 import {
   createPrescription,
   createRefill,
@@ -311,6 +312,7 @@ type ModalMode =
 
 export default function Prescriptions() {
   const { user } = useAuth();
+  const location = useLocation();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
@@ -331,8 +333,12 @@ export default function Prescriptions() {
         const isDoctor = Boolean(user?.roles.includes('doctor'));
         const doctorId = user?.doctorId ?? null;
 
+        const qs = new URLSearchParams(location.search);
+        const patientIdParam = qs.get('patientId');
+        const patientId = patientIdParam ? Number(patientIdParam) : undefined;
+
         const [rxs, pts, meds, pharms] = await Promise.all([
-          getPrescriptions(),
+          getPrescriptions(patientId),
           getPatients(),
           getMedications(),
           getPharmacies(),

@@ -12,6 +12,10 @@ import { useAuth } from '../auth/AuthContext';
 
 const navItems = [
   { to: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
+  { to: '/admin',         label: 'Admin',         icon: LayoutDashboard },
+  { to: '/doctor-dashboard', label: 'Doctor Dashboard', icon: Stethoscope },
+  { to: '/pharmacy-tech', label: 'Pharmacy Tech', icon: ClipboardList },
+  { to: '/secretary',     label: 'Secretary',     icon: UserRound },
   { to: '/patients',      label: 'Patients',       icon: UserRound },
   { to: '/medications',   label: 'Medications',    icon: Pill },
   { to: '/prescriptions', label: 'Prescriptions',  icon: ClipboardList },
@@ -29,7 +33,13 @@ export default function Layout() {
     if (roles.includes('admin')) return true;
     if (roles.includes('doctor')) {
       // Doctors can work with prescribing + reference data
-      return ['/dashboard', '/prescriptions', '/medications', '/pharmacies'].includes(item.to);
+      return ['/doctor-dashboard', '/prescriptions', '/medications', '/pharmacies'].includes(item.to);
+    }
+    if (roles.includes('pharmacy_tech')) {
+      return ['/pharmacy-tech'].includes(item.to);
+    }
+    if (roles.includes('secretary')) {
+      return ['/secretary'].includes(item.to);
     }
     // Patients only get their dashboard experience
     return ['/dashboard'].includes(item.to);

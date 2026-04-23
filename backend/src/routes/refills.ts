@@ -5,7 +5,7 @@ import { authenticateJWT, requireRole } from '../auth/middleware';
 
 const router = Router();
 
-router.get('/', authenticateJWT, requireRole('admin', 'doctor'), async (req: Request, res: Response) => {
+router.get('/', authenticateJWT, requireRole('admin', 'doctor', 'pharmacy_tech'), async (req: Request, res: Response) => {
   try {
     const where: Record<string, number> = {};
     if (req.query.prescriptionId) {
@@ -22,7 +22,7 @@ router.get('/', authenticateJWT, requireRole('admin', 'doctor'), async (req: Req
   }
 });
 
-router.post('/', authenticateJWT, requireRole('admin', 'doctor'), async (req: Request, res: Response) => {
+router.post('/', authenticateJWT, requireRole('admin', 'doctor', 'pharmacy_tech'), async (req: Request, res: Response) => {
   try {
     const user = req.user!;
     const { PrescriptionID, RefillDate, QuantityDispensed } = req.body;

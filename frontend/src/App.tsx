@@ -1,11 +1,15 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import DoctorDashboard from './pages/DoctorDashboard';
 import Doctors from './pages/Doctors';
 import Medications from './pages/Medications';
 import Patients from './pages/Patients';
 import Pharmacies from './pages/Pharmacies';
 import Prescriptions from './pages/Prescriptions';
+import PharmacyTechDashboard from './pages/PharmacyTechDashboard';
+import SecretaryDashboard from './pages/SecretaryDashboard';
 import Login from './pages/Login';
 import { useAuth } from './auth/AuthContext';
 import { setAuthToken } from './services/api';
@@ -28,8 +32,10 @@ export default function App() {
 
   const homePath = useMemo(() => {
     const roles = user?.roles ?? [];
-    if (roles.includes('admin')) return '/patients';
-    if (roles.includes('doctor')) return '/dashboard';
+    if (roles.includes('admin')) return '/admin';
+    if (roles.includes('doctor')) return '/doctor-dashboard';
+    if (roles.includes('pharmacy_tech')) return '/pharmacy-tech';
+    if (roles.includes('secretary')) return '/secretary';
     return '/dashboard';
   }, [user?.roles]);
 
@@ -49,8 +55,40 @@ export default function App() {
           <Route
             path="dashboard"
             element={
-              <RequireRole anyOf={['admin', 'patient', 'doctor']}>
+              <RequireRole anyOf={['admin', 'patient']}>
                 <Dashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="admin"
+            element={
+              <RequireRole anyOf={['admin']}>
+                <AdminDashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="doctor-dashboard"
+            element={
+              <RequireRole anyOf={['admin', 'doctor']}>
+                <DoctorDashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="pharmacy-tech"
+            element={
+              <RequireRole anyOf={['admin', 'pharmacy_tech']}>
+                <PharmacyTechDashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="secretary"
+            element={
+              <RequireRole anyOf={['admin', 'secretary']}>
+                <SecretaryDashboard />
               </RequireRole>
             }
           />

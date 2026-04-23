@@ -16,6 +16,7 @@ import type {
   CreatePatientPayload,
   CreatePharmacyPayload,
   CreatePrescriptionPayload,
+  DoctorDashboardResponse,
   Doctor,
   DoseLog,
   LogDosePayload,
@@ -57,9 +58,9 @@ export function setAuthToken(token: string | null) {
 // across the session without a real backend.
 
 let mockPatients: Patient[] = [
-  { PatientID: 1, FirstName: 'Alice', LastName: 'Johnson', Email: 'alice@example.com' },
-  { PatientID: 2, FirstName: 'Bob', LastName: 'Martinez', Email: 'bob@example.com' },
-  { PatientID: 3, FirstName: 'Carol', LastName: 'Lee', Email: 'carol@example.com' },
+  { PatientID: 1, FirstName: 'Alice', LastName: 'Johnson', Email: 'alice@example.com', PrimaryDoctorID: 1 },
+  { PatientID: 2, FirstName: 'Bob', LastName: 'Martinez', Email: 'bob@example.com', PrimaryDoctorID: 2 },
+  { PatientID: 3, FirstName: 'Carol', LastName: 'Lee', Email: 'carol@example.com', PrimaryDoctorID: null },
 ];
 
 let mockMedications: Medication[] = [
@@ -181,7 +182,7 @@ export async function getPatient(id: number): Promise<Patient> {
 export async function createPatient(payload: CreatePatientPayload): Promise<Patient> {
   if (USE_MOCK) {
     await delay();
-    const created: Patient = { PatientID: nextId.patient++, ...payload };
+    const created: Patient = { PatientID: nextId.patient++, PrimaryDoctorID: null, ...payload };
     mockPatients.push(created);
     return { ...created };
   }
@@ -197,6 +198,23 @@ export async function updatePatient(id: number, payload: UpdatePatientPayload): 
     return getPatient(id);
   }
   return apiFetch<Patient>(`/patients/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+export async function updatePatientPrimaryDoctor(
+  id: number,
+  primaryDoctorId: number | null,
+): Promise<Patient> {
+  if (USE_MOCK) {
+    await delay();
+    mockPatients = mockPatients.map((p) =>
+      p.PatientID === id ? { ...p, PrimaryDoctorID: primaryDoctorId } : p
+    );
+    return getPatient(id);
+  }
+  return apiFetch<Patient>(`/patients/${id}/primary-doctor`, {
+    method: 'PUT',
+    body: JSON.stringify({ PrimaryDoctorID: primaryDoctorId }),
+  });
 }
 
 export async function deletePatient(id: number): Promise<void> {
@@ -416,6 +434,32 @@ export async function createRefill(payload: Omit<Refill, 'RefillID'>): Promise<R
 }
 
 // ─── Composite / dashboard queries ────────────────────────────────────────────
+
+export async function getDoctorDashboard(params?: {
+  from?: string;
+  to?: string;
+  lowThresholdPct?: number;
+  noRecentLogsDays?: number;
+}): Promise<DoctorDashboardResponse> {
+  if (USE_MOCK) {
+    await delay(350);
+    return {
+      scope: { doctorId: 1, from: params?.from ?? '2026-01-01', to: params?.to ?? '2026-01-30' },
+      aggregate: { TotalDoses: 0, Taken: 0, Missed: 0, Late: 0, AdherencePct: 0, Patients: 0, PatientsBelowPct: 0 },
+      trend: [],
+      alerts: [],
+      patients: [],
+    };
+  }
+
+  const qs = new URLSearchParams();
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  if (typeof params?.lowThresholdPct === 'number') qs.set('lowThresholdPct', String(params.lowThresholdPct));
+  if (typeof params?.noRecentLogsDays === 'number') qs.set('noRecentLogsDays', String(params.noRecentLogsDays));
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return apiFetch<DoctorDashboardResponse>(`/doctors/me/dashboard${suffix}`);
+}
 
 /**
  * Returns the daily medication schedule for a patient — prescriptions

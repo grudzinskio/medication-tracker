@@ -33,7 +33,11 @@ CREATE TABLE Patients (
     PatientID INT AUTO_INCREMENT PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NOT NULL,
-    Email VARCHAR(100) UNIQUE NOT NULL
+    Email VARCHAR(100) UNIQUE NOT NULL,
+    PrimaryDoctorID INT NULL,
+
+    CONSTRAINT fk_patients_primary_doctor
+        FOREIGN KEY (PrimaryDoctorID) REFERENCES Doctors(DoctorID) ON DELETE SET NULL
 );
 
 -- ==============================================================================
@@ -53,7 +57,7 @@ CREATE TABLE Users (
     UserID INT AUTO_INCREMENT PRIMARY KEY,
     Username VARCHAR(100) UNIQUE NOT NULL,
     Password VARCHAR(255) NOT NULL,
-    UserType VARCHAR(20) NOT NULL CHECK (UserType IN ('patient', 'doctor', 'admin')),
+    UserType VARCHAR(20) NOT NULL CHECK (UserType IN ('patient', 'doctor', 'admin', 'staff')),
     PatientID INT NULL,
     DoctorID INT NULL,
 

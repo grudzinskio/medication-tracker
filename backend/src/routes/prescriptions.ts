@@ -18,6 +18,9 @@ router.get('/', authenticateJWT, async (req: Request, res: Response) => {
     } else if (user.roles.includes('doctor')) {
       where.DoctorID = user.doctorId ?? -1;
       if (requestedPatientId) where.PatientID = requestedPatientId;
+    } else if (user.roles.includes('pharmacy_tech')) {
+      // Pharmacy techs can review prescriptions for fulfillment workflows.
+      if (requestedPatientId) where.PatientID = requestedPatientId;
     } else if (user.roles.includes('admin')) {
       if (requestedPatientId) where.PatientID = requestedPatientId;
     } else {
@@ -79,7 +82,7 @@ router.post('/', authenticateJWT, requireRole('admin', 'doctor'), async (req: Re
   }
 });
 
-router.put('/:id', authenticateJWT, requireRole('admin', 'doctor'), async (req: Request, res: Response) => {
+router.put('/:id', authenticateJWT, requireRole('admin', 'doctor', 'pharmacy_tech'), async (req: Request, res: Response) => {
   try {
     const user = req.user!;
     const prescription = await Prescription.findByPk(req.params.id);
@@ -89,11 +92,20 @@ router.put('/:id', authenticateJWT, requireRole('admin', 'doctor'), async (req: 
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const updates = { ...req.body };
+    const updates = { ...req.body } as any;
     if ('EndDate' in updates && !updates.EndDate) updates.EndDate = null;
 
     if (user.roles.includes('doctor') && 'DoctorID' in updates && updates.DoctorID !== user.doctorId) {
       return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    if (user.roles.includes('pharmacy_tech')) {
+      const allowed = new Set(['PharmacyID', 'EndDate']);
+      const keys = Object.keys(updates);
+      const forbiddenKeys = keys.filter((k) => !allowed.has(k));
+      if (forbiddenKeys.length > 0) {
+        return res.status(403).json({ error: `Forbidden fields: ${forbiddenKeys.join(', ')}` });
+      }
     }
 
     await prescription.update(updates);

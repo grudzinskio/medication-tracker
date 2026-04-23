@@ -5,6 +5,7 @@ export interface Patient {
   FirstName: string;
   LastName: string;
   Email: string;
+  PrimaryDoctorID: number | null;
 }
 
 export interface Medication {
@@ -88,9 +89,56 @@ export interface AdherenceSummary {
   AdherencePct: number; // 0–100
 }
 
+export interface DoctorDashboardPatientRow {
+  PatientID: number;
+  FirstName: string;
+  LastName: string;
+  ActiveRxCount: number;
+  TotalDoses: number;
+  Taken: number;
+  Missed: number;
+  Late: number;
+  AdherencePct: number;
+  MissedTodayCount: number;
+  LastLogAt: string | null;
+}
+
+export interface DoctorDashboardTrendPoint {
+  Date: string; // YYYY-MM-DD
+  Taken: number;
+  Missed: number;
+  Late: number;
+  TotalDoses: number;
+  AdherencePct: number;
+}
+
+export type DoctorDashboardAlertType = 'low_adherence' | 'missed_today' | 'no_recent_logs';
+
+export interface DoctorDashboardAlert {
+  type: DoctorDashboardAlertType;
+  PatientID: number;
+  message: string;
+}
+
+export interface DoctorDashboardResponse {
+  scope: { doctorId: number | null; from: string; to: string };
+  aggregate: {
+    TotalDoses: number;
+    Taken: number;
+    Missed: number;
+    Late: number;
+    AdherencePct: number;
+    Patients: number;
+    PatientsBelowPct: number;
+  };
+  trend: DoctorDashboardTrendPoint[];
+  alerts: DoctorDashboardAlert[];
+  patients: DoctorDashboardPatientRow[];
+}
+
 // ─── API payload types ────────────────────────────────────────────────────────
 
-export type CreatePatientPayload = Omit<Patient, 'PatientID'>;
+export type CreatePatientPayload = Omit<Patient, 'PatientID' | 'PrimaryDoctorID'>;
 export type UpdatePatientPayload = Partial<CreatePatientPayload>;
 
 export type CreateMedicationPayload = Omit<Medication, 'MedID'>;

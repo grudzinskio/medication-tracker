@@ -1,10 +1,12 @@
 # Demo logins (school)
 
-All accounts use the password **`password`**.
-
 ## Admin
 - **username**: `admin`
 - **password**: `password`
+
+## Staff
+- **pharmacy tech**: `pharmacytech` / `password`
+- **secretary**: `secretary` / `password`
 
 ## Doctors
 Doctor usernames are `doctor<DoctorID>` (from `data/doctors.csv`).

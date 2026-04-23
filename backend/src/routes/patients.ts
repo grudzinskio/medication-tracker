@@ -7,7 +7,7 @@ const router = Router();
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
-router.get('/', authenticateJWT, requireRole('admin', 'doctor'), async (_req: Request, res: Response) => {
+router.get('/', authenticateJWT, requireRole('admin', 'doctor', 'secretary'), async (_req: Request, res: Response) => {
   try {
     const user = _req.user!;
     const where: any = {};
@@ -35,6 +35,36 @@ router.get('/', authenticateJWT, requireRole('admin', 'doctor'), async (_req: Re
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+router.put(
+  '/:id/primary-doctor',
+  authenticateJWT,
+  requireRole('admin', 'secretary'),
+  async (req: Request, res: Response) => {
+    try {
+      const patient = await Patient.findByPk(req.params.id);
+      if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+      const { PrimaryDoctorID } = req.body ?? {};
+      if (PrimaryDoctorID !== null && PrimaryDoctorID !== undefined) {
+        const parsed = Number(PrimaryDoctorID);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+          return res.status(400).json({ error: 'PrimaryDoctorID must be a positive number or null' });
+        }
+        const exists = await Doctor.findByPk(parsed);
+        if (!exists) return res.status(404).json({ error: 'Doctor not found' });
+        await patient.update({ PrimaryDoctorID: parsed });
+      } else {
+        await patient.update({ PrimaryDoctorID: null });
+      }
+
+      return res.json(patient);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
 
 router.get('/:id', authenticateJWT, requireSelfPatientOrAdmin('id'), async (req: Request, res: Response) => {
   try {
