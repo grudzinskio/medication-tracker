@@ -90,8 +90,8 @@ export default function Login() {
                     setAuthToken(newToken);
                     login(newToken, user);
                     navigate(from ?? roleHome(user.roles), { replace: true });
-                  } catch (err: any) {
-                    setError(err?.message ?? 'Login failed');
+                  } catch (err: unknown) {
+                    setError(err instanceof Error ? err.message : 'Unable to sign in. Please try again.');
                   } finally {
                     setSubmitting(false);
                   }

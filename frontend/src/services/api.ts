@@ -156,10 +156,38 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export async function login(username: string, password: string): Promise<{ token: string; user: AuthUser }> {
-  return apiFetch<{ token: string; user: AuthUser }>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ username, password }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+  } catch {
+    throw new Error('Unable to reach the server. Check your connection and try again.');
+  }
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error('Invalid username or password.');
+    }
+    if (res.status === 400) {
+      let msg = '';
+      try {
+        const body = (await res.json()) as { error?: string };
+        msg = body?.error ?? '';
+      } catch {
+        /* ignore */
+      }
+      if (/required/i.test(msg)) {
+        throw new Error('Please enter your username and password.');
+      }
+      throw new Error('Invalid username or password.');
+    }
+    throw new Error('Unable to sign in. Please try again.');
+  }
+
+  return res.json() as Promise<{ token: string; user: AuthUser }>;
 }
 
 // ─── Patients ─────────────────────────────────────────────────────────────────
