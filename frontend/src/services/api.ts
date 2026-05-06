@@ -11,6 +11,7 @@
 
 import type {
   AdherenceSummary,
+  ClinicalWarningsResponse,
   CreateDoctorPayload,
   CreateMedicationPayload,
   CreatePatientPayload,
@@ -19,6 +20,7 @@ import type {
   DoctorDashboardResponse,
   Doctor,
   DoseLog,
+  DrugLookupSuggestion,
   LogDosePayload,
   Medication,
   Patient,
@@ -569,4 +571,63 @@ export async function getAdherence(
   return apiFetch<AdherenceSummary>(
     `/patients/${patientId}/adherence?from=${from}&to=${to}`
   );
+}
+
+export async function searchMedicationLookup(query: string): Promise<DrugLookupSuggestion[]> {
+  if (USE_MOCK) {
+    await delay();
+    return [];
+  }
+  const qs = new URLSearchParams({ q: query });
+  const data = await apiFetch<{ results: DrugLookupSuggestion[] }>(
+    `/medication-lookup?${qs.toString()}`
+  );
+  return data.results;
+}
+
+export async function getClinicalWarnings(patientId: number): Promise<ClinicalWarningsResponse> {
+  if (USE_MOCK) {
+    await delay();
+    return {
+      disclaimer: '',
+      duplicateTherapySameDrug: [],
+      duplicateTherapySameGeneric: [],
+      interactionHints: [],
+    };
+  }
+  return apiFetch<ClinicalWarningsResponse>(`/patients/${patientId}/clinical-warnings`);
+}
+
+export async function emailPatientFromDoctor(payload: {
+  patientId: number;
+  subject: string;
+  body: string;
+  /** If set, sends here instead of the patient record email (demo / classroom use). */
+  to?: string;
+}): Promise<{ ok: boolean; to: string; delivery: 'smtp' | 'ethereal' | 'console'; previewUrl: string | null }> {
+  if (USE_MOCK) {
+    await delay();
+    return {
+      ok: true,
+      to: payload.to?.trim() || 'mock@example.com',
+      delivery: 'console',
+      previewUrl: null,
+    };
+  }
+  const body: Record<string, unknown> = {
+    patientId: payload.patientId,
+    subject: payload.subject,
+    body: payload.body,
+  };
+  const override = payload.to?.trim();
+  if (override) body.to = override;
+  return apiFetch<{
+    ok: boolean;
+    to: string;
+    delivery: 'smtp' | 'ethereal' | 'console';
+    previewUrl: string | null;
+  }>('/doctors/me/email-patient', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
 }

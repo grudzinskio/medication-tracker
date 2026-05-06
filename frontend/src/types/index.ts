@@ -136,6 +136,34 @@ export interface DoctorDashboardResponse {
   patients: DoctorDashboardPatientRow[];
 }
 
+/** OpenFDA-backed catalog suggestion (via backend proxy). */
+export interface DrugLookupSuggestion {
+  DrugName: string;
+  GenericName: string;
+  Form: string;
+  Route: string;
+  Manufacturer: string;
+  UnitType: string;
+}
+
+/** Educational duplicate-therapy / interaction hints from the API. */
+export interface ClinicalWarningsResponse {
+  disclaimer: string;
+  duplicateTherapySameDrug: Array<{ MedID: number; DrugName: string; count: number }>;
+  duplicateTherapySameGeneric: Array<{
+    GenericName: string;
+    DrugNames: string[];
+    MedIDs: number[];
+  }>;
+  interactionHints: Array<{
+    MedID_1: number;
+    MedID_2: number;
+    DrugName_1: string;
+    DrugName_2: string;
+    Note: string;
+  }>;
+}
+
 // ─── API payload types ────────────────────────────────────────────────────────
 
 export type CreatePatientPayload = Omit<Patient, 'PatientID' | 'PrimaryDoctorID'>;

@@ -13,9 +13,10 @@ import {
   createMedication,
   deleteMedication,
   getMedications,
+  searchMedicationLookup,
   updateMedication,
 } from '../services/api';
-import type { CreateMedicationPayload, Medication } from '../types';
+import type { CreateMedicationPayload, DrugLookupSuggestion, Medication } from '../types';
 
 /**
  * Multi-component drugs (e.g. vaccines) store one unit per active ingredient
@@ -58,20 +59,68 @@ interface MedicationFormProps {
   onSubmit: (data: FormState) => Promise<void>;
   onCancel: () => void;
   submitLabel: string;
+  showDrugLookup?: boolean;
 }
 
-function MedicationForm({ initial = emptyForm, onSubmit, onCancel, submitLabel }: MedicationFormProps) {
+function applySuggestion(s: DrugLookupSuggestion): FormState {
+  return {
+    DrugName: s.DrugName,
+    GenericName: s.GenericName || s.DrugName,
+    Form: FORM_OPTIONS.includes(s.Form) ? s.Form : 'Other',
+    Route: ROUTE_OPTIONS.includes(s.Route) ? s.Route : 'Other',
+    Manufacturer: s.Manufacturer,
+    UnitType: UNIT_OPTIONS.includes(s.UnitType) ? s.UnitType : 'mg',
+  };
+}
+
+function MedicationForm({
+  initial = emptyForm,
+  onSubmit,
+  onCancel,
+  submitLabel,
+  showDrugLookup = false,
+}: MedicationFormProps) {
   const [form, setForm] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lookupQ, setLookupQ] = useState('');
+  const [lookupResults, setLookupResults] = useState<DrugLookupSuggestion[]>([]);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
   function set(field: keyof FormState) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
   }
 
+  useEffect(() => {
+    if (!showDrugLookup) return;
+    const q = lookupQ.trim();
+    if (q.length < 2) {
+      setLookupResults([]);
+      setLookupError(null);
+      return;
+    }
+    setLookupLoading(true);
+    setLookupError(null);
+    const t = window.setTimeout(() => {
+      searchMedicationLookup(q)
+        .then(setLookupResults)
+        .catch(() => {
+          setLookupResults([]);
+          setLookupError('Lookup failed. Try a shorter brand name or try again later.');
+        })
+        .finally(() => setLookupLoading(false));
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [lookupQ, showDrugLookup]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.DrugName.trim()) {
+      setError('Drug name is required.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -91,6 +140,49 @@ function MedicationForm({ initial = emptyForm, onSubmit, onCancel, submitLabel }
         </div>
       )}
 
+      {showDrugLookup && (
+        <div className="rounded-xl border border-teal-100 bg-teal-50/50 p-3">
+          <p className="text-xs font-medium text-teal-900">Look up product label (OpenFDA, via this app)</p>
+          <p className="mt-0.5 text-[11px] text-teal-800/80">
+            Type a brand name, then pick a row to prefill the form. Adjust form values before saving.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <input
+              type="search"
+              value={lookupQ}
+              onChange={(e) => setLookupQ(e.target.value)}
+              placeholder="e.g. Lipitor, Metformin…"
+              className={inputCls}
+            />
+            {lookupLoading ? <Loader2 className="h-5 w-5 shrink-0 animate-spin text-teal-600" /> : null}
+          </div>
+          {lookupError && <p className="mt-1.5 text-xs text-red-600">{lookupError}</p>}
+          {lookupResults.length > 0 && (
+            <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-teal-100 bg-white p-1 text-xs">
+              {lookupResults.map((s, i) => (
+                <li key={`${s.DrugName}-${i}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm(applySuggestion(s));
+                      setLookupQ('');
+                      setLookupResults([]);
+                    }}
+                    className="w-full rounded-md px-2 py-1.5 text-left text-slate-800 hover:bg-teal-50"
+                  >
+                    <span className="font-medium">{s.DrugName}</span>
+                    <span className="text-slate-500"> — {s.GenericName}</span>
+                    <span className="mt-0.5 block text-[10px] text-slate-400">
+                      {s.Form} · {s.Route} · {s.UnitType}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         <Field label="Drug Name" required>
           <input
@@ -102,10 +194,9 @@ function MedicationForm({ initial = emptyForm, onSubmit, onCancel, submitLabel }
             className={inputCls}
           />
         </Field>
-        <Field label="Generic Name" required>
+        <Field label="Generic Name">
           <input
             type="text"
-            required
             value={form.GenericName}
             onChange={set('GenericName')}
             placeholder="Lisinopril"
@@ -192,7 +283,10 @@ export default function Medications() {
   }, [medications, query]);
 
   async function handleAdd(data: FormState) {
-    const payload: CreateMedicationPayload = data;
+    const payload: CreateMedicationPayload = {
+      ...data,
+      GenericName: data.GenericName.trim() || data.DrugName.trim(),
+    };
     const created = await createMedication(payload);
     setMedications((prev) => [...prev, created]);
     setModal(null);
@@ -348,6 +442,7 @@ export default function Medications() {
       {modal?.type === 'add' && (
         <Modal title="Add Medication" onClose={() => setModal(null)} size="max-w-xl">
           <MedicationForm
+            showDrugLookup
             onSubmit={handleAdd}
             onCancel={() => setModal(null)}
             submitLabel="Add Medication"

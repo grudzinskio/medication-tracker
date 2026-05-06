@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { Prescription } from '../models';
-import sequelize from '../db/sequelize';
 import { authenticateJWT, requireRole } from '../auth/middleware';
+import { writeAuditLog } from '../services/auditLog';
 
 const router = Router();
 
@@ -75,6 +75,14 @@ router.post('/', authenticateJWT, requireRole('admin', 'doctor'), async (req: Re
       StartDate,
       EndDate: EndDate || null,
     });
+    const rx = prescription as Prescription;
+    await writeAuditLog({
+      userId: user.userId,
+      action: 'prescription.create',
+      entityType: 'Prescription',
+      entityId: rx.PrescriptionID,
+      details: `PatientID=${PatientID} MedID=${MedID}`,
+    });
     res.status(201).json(prescription);
   } catch (err) {
     console.error(err);
@@ -109,6 +117,14 @@ router.put('/:id', authenticateJWT, requireRole('admin', 'doctor', 'pharmacy_tec
     }
 
     await prescription.update(updates);
+    const rx = prescription as Prescription;
+    await writeAuditLog({
+      userId: user.userId,
+      action: 'prescription.update',
+      entityType: 'Prescription',
+      entityId: rx.PrescriptionID,
+      details: Object.keys(updates).join(','),
+    });
     res.json(prescription);
   } catch (err) {
     console.error(err);
@@ -126,7 +142,15 @@ router.delete('/:id', authenticateJWT, requireRole('admin', 'doctor'), async (re
       return res.status(403).json({ error: 'Forbidden' });
     }
 
+    const rid = (prescription as Prescription).PrescriptionID;
     await prescription.destroy();
+    await writeAuditLog({
+      userId: user.userId,
+      action: 'prescription.delete',
+      entityType: 'Prescription',
+      entityId: rid,
+      details: null,
+    });
     res.status(204).send();
   } catch (err) {
     console.error(err);

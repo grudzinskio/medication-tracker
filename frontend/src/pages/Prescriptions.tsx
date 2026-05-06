@@ -17,6 +17,7 @@ import {
   createPrescription,
   createRefill,
   deletePrescription,
+  getClinicalWarnings,
   getDoctor,
   getDoctors,
   getMedications,
@@ -27,6 +28,7 @@ import {
   updatePrescription,
 } from '../services/api';
 import type {
+  ClinicalWarningsResponse,
   CreatePrescriptionPayload,
   Doctor,
   Medication,
@@ -323,6 +325,7 @@ export default function Prescriptions() {
   const [query, setQuery] = useState('');
   const [modal, setModal] = useState<ModalMode | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [clinical, setClinical] = useState<ClinicalWarningsResponse | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -364,7 +367,7 @@ export default function Prescriptions() {
     }
 
     load();
-  }, [user?.doctorId, user?.roles]);
+  }, [user?.doctorId, user?.roles, location.search]);
 
   const patientMap  = useMemo(() => new Map(patients.map((p) => [p.PatientID, p])),    [patients]);
   const medMap      = useMemo(() => new Map(medications.map((m) => [m.MedID, m])),      [medications]);
@@ -385,6 +388,37 @@ export default function Prescriptions() {
       );
     });
   }, [prescriptions, query, patientMap, medMap]);
+
+  const focusPatientId = useMemo(() => {
+    const qs = new URLSearchParams(location.search);
+    const fromUrl = qs.get('patientId');
+    if (fromUrl) {
+      const n = Number(fromUrl);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    const ids = new Set(filtered.map((r) => r.PatientID));
+    if (ids.size === 1) return [...ids][0]!;
+    return null;
+  }, [location.search, filtered]);
+
+  useEffect(() => {
+    if (!focusPatientId) {
+      setClinical(null);
+      return;
+    }
+    const roles = user?.roles ?? [];
+    const ok =
+      roles.includes('admin') ||
+      roles.includes('doctor') ||
+      (roles.includes('patient') && user?.patientId === focusPatientId);
+    if (!ok) {
+      setClinical(null);
+      return;
+    }
+    getClinicalWarnings(focusPatientId)
+      .then(setClinical)
+      .catch(() => setClinical(null));
+  }, [focusPatientId, user?.roles, user?.patientId]);
 
   function buildPayload(data: PrescriptionFormState): CreatePrescriptionPayload {
     return {
@@ -448,6 +482,33 @@ export default function Prescriptions() {
       {error && (
         <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <AlertCircle className="h-4 w-4 shrink-0" />{error}
+        </div>
+      )}
+
+      {clinical &&
+        (clinical.duplicateTherapySameDrug.length > 0 ||
+          clinical.duplicateTherapySameGeneric.length > 0 ||
+          clinical.interactionHints.length > 0) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-semibold text-amber-900">Clinical awareness (educational demo)</p>
+          <p className="mt-1 text-xs text-amber-900/80">{clinical.disclaimer}</p>
+          <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
+            {clinical.duplicateTherapySameDrug.map((d) => (
+              <li key={`dup-${d.MedID}`}>
+                Duplicate active prescriptions for <strong>{d.DrugName}</strong> ({d.count} rows).
+              </li>
+            ))}
+            {clinical.duplicateTherapySameGeneric.map((g) => (
+              <li key={g.GenericName}>
+                Same generic ({g.GenericName}) on multiple drugs: {g.DrugNames.join(', ')}.
+              </li>
+            ))}
+            {clinical.interactionHints.map((h) => (
+              <li key={`${h.MedID_1}-${h.MedID_2}`}>
+                {h.DrugName_1} + {h.DrugName_2}: {h.Note}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

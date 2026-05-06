@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { Op, fn, col } from 'sequelize';
 import { Doctor, Prescription, DoseLog, Patient } from '../models';
 import { authenticateJWT, requireRole } from '../auth/middleware';
+import { sendMail } from '../services/mail';
+import { writeAuditLog } from '../services/auditLog';
 
 const router = Router();
 
@@ -261,6 +263,77 @@ router.get(
       };
 
       return res.json(payload);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/me/email-patient',
+  authenticateJWT,
+  requireRole('doctor', 'admin'),
+  async (req: Request, res: Response) => {
+    try {
+      const user = req.user!;
+      const { patientId, subject, body: textBody, to: toOverride } = req.body ?? {};
+      const pid = typeof patientId === 'number' ? patientId : parseInt(String(patientId), 10);
+      if (!Number.isFinite(pid) || pid < 1) {
+        return res.status(400).json({ error: 'patientId is required' });
+      }
+      if (!subject || !String(subject).trim()) {
+        return res.status(400).json({ error: 'subject is required' });
+      }
+      if (!textBody || !String(textBody).trim()) {
+        return res.status(400).json({ error: 'body is required' });
+      }
+
+      if (user.roles.includes('doctor')) {
+        const doctorId = user.doctorId;
+        if (!doctorId) return res.status(403).json({ error: 'Forbidden' });
+        const link = await Prescription.findOne({
+          where: { PatientID: pid, DoctorID: doctorId },
+        });
+        if (!link) return res.status(403).json({ error: 'No prescriptions link you to this patient' });
+      }
+
+      const patient = await Patient.findByPk(pid);
+      if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+      const patientEmail = (patient as Patient).Email;
+      const rawOverride = typeof toOverride === 'string' ? toOverride.trim() : '';
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      let to = patientEmail;
+      if (rawOverride) {
+        if (!emailRe.test(rawOverride)) {
+          return res.status(400).json({ error: 'Invalid send-to email address' });
+        }
+        to = rawOverride.slice(0, 254);
+      }
+
+      const mailResult = await sendMail({
+        to,
+        subject: String(subject).slice(0, 200),
+        text: String(textBody).slice(0, 10_000),
+      });
+
+      await writeAuditLog({
+        userId: user.userId,
+        action: 'email.patient',
+        entityType: 'Patient',
+        entityId: pid,
+        details: rawOverride
+          ? `subject=${String(subject).slice(0, 60)};recipientOverride=1`
+          : `subject=${String(subject).slice(0, 80)}`,
+      });
+
+      return res.json({
+        ok: true,
+        to,
+        delivery: mailResult.mode,
+        previewUrl: mailResult.previewUrl ?? null,
+      });
     } catch (err) {
       console.error(err);
       return res.status(500).json({ error: 'Internal server error' });

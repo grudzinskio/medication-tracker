@@ -2,15 +2,29 @@ import {
   AlertCircle,
   CalendarRange,
   ChevronRight,
+  Download,
   Loader2,
+  Mail,
   Search,
   TrendingUp,
   Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDoctorDashboard } from '../services/api';
-import type { DoctorDashboardResponse } from '../types';
+import Modal from '../components/Modal';
+import { useAuth } from '../auth/AuthContext';
+import { emailPatientFromDoctor, getDoctorDashboard, getPatient } from '../services/api';
+import type { DoctorDashboardPatientRow, DoctorDashboardResponse } from '../types';
+
+type PatientSortKey = 'name' | 'adherence' | 'missedToday' | 'lastLogAt';
+
+type EmailSendSuccess = {
+  to: string;
+  delivery: 'smtp' | 'ethereal' | 'console';
+  previewUrl: string | null;
+};
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function utcDateString(daysAgo = 0): string {
   const d = new Date();
@@ -24,18 +38,34 @@ const RANGES = [
   { label: 'Last 90 days', days: 90 },
 ];
 
+function csvEscape(s: string | number | null | undefined): string {
+  const t = s === null || s === undefined ? '' : String(s);
+  if (/[",\n]/.test(t)) return `"${t.replace(/"/g, '""')}"`;
+  return t;
+}
+
 export default function DoctorDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canEmail = Boolean(user?.roles.includes('doctor') || user?.roles.includes('admin'));
   const [days, setDays] = useState(30);
   const [lowThresholdPct, setLowThresholdPct] = useState(80);
   const [noRecentLogsDays, setNoRecentLogsDays] = useState(7);
   const [query, setQuery] = useState('');
   const [onlyAlerts, setOnlyAlerts] = useState(false);
-  const [sortBy, setSortBy] = useState<'name' | 'adherence' | 'missedToday' | 'lastLogAt'>('adherence');
+  const [sortBy, setSortBy] = useState<PatientSortKey>('adherence');
 
   const [data, setData] = useState<DoctorDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [emailPatient, setEmailPatient] = useState<{ id: number; name: string } | null>(null);
+  const [emailTo, setEmailTo] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailErr, setEmailErr] = useState<string | null>(null);
+  const [emailSuccess, setEmailSuccess] = useState<EmailSendSuccess | null>(null);
 
   const from = useMemo(() => utcDateString(days - 1), [days]);
   const to = useMemo(() => utcDateString(0), []);
@@ -59,6 +89,32 @@ export default function DoctorDashboard() {
       cancelled = true;
     };
   }, [from, to, lowThresholdPct, noRecentLogsDays]);
+
+  useEffect(() => {
+    if (!emailPatient) return;
+    let cancelled = false;
+    setEmailTo('');
+    getPatient(emailPatient.id)
+      .then((pt) => {
+        if (!cancelled) setEmailTo(pt.Email);
+      })
+      .catch(() => {
+        if (!cancelled) setEmailTo('');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [emailPatient]);
+
+  function closeEmailModal() {
+    setEmailPatient(null);
+    setEmailTo('');
+    setEmailSubject('');
+    setEmailBody('');
+    setEmailErr(null);
+  }
+
+  const emailToValid = !emailTo.trim() || EMAIL_RE.test(emailTo.trim());
 
   const trendMax = useMemo(() => {
     if (!data || data.trend.length === 0) return 0;
@@ -105,6 +161,71 @@ export default function DoctorDashboard() {
     return sorted;
   }, [data, query, onlyAlerts, lowThresholdPct, noRecentLogsDays, sortBy]);
 
+  function handleExportCsv() {
+    if (!data) return;
+    const rows: DoctorDashboardPatientRow[] = filteredPatients;
+    const header = [
+      'PatientID',
+      'FirstName',
+      'LastName',
+      'AdherencePct',
+      'Taken',
+      'Missed',
+      'Late',
+      'ActiveRxCount',
+      'MissedTodayCount',
+      'LastLogAt',
+    ];
+    const lines = [header.join(',')];
+    for (const p of rows) {
+      lines.push(
+        [
+          p.PatientID,
+          csvEscape(p.FirstName),
+          csvEscape(p.LastName),
+          p.AdherencePct,
+          p.Taken,
+          p.Missed,
+          p.Late,
+          p.ActiveRxCount,
+          p.MissedTodayCount,
+          csvEscape(p.LastLogAt),
+        ].join(','),
+      );
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `doctor-dashboard-${from}_to_${to}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleSendEmail() {
+    if (!emailPatient || !emailToValid) return;
+    setEmailSending(true);
+    setEmailErr(null);
+    try {
+      const trimmed = emailTo.trim();
+      const res = await emailPatientFromDoctor({
+        patientId: emailPatient.id,
+        subject: emailSubject,
+        body: emailBody,
+        ...(trimmed ? { to: trimmed } : {}),
+      });
+      setEmailSuccess({
+        to: res.to,
+        delivery: res.delivery,
+        previewUrl: res.previewUrl,
+      });
+    } catch {
+      setEmailErr('Could not send email. Configure SMTP in server .env or check the console log.');
+    } finally {
+      setEmailSending(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-slate-400">
@@ -126,6 +247,16 @@ export default function DoctorDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {data && !error ? (
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+            >
+              <Download className="h-4 w-4 text-slate-500" />
+              Export CSV
+            </button>
+          ) : null}
           <div className="flex gap-1">
             {RANGES.map((r) => (
               <button
@@ -266,9 +397,10 @@ export default function DoctorDashboard() {
                   <span>Sort</span>
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
+                    onChange={(e) => setSortBy(e.target.value as PatientSortKey)}
                     className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-200"
                     title="Sort patients"
+                    aria-label="Sort patients"
                   >
                     <option value="adherence">Adherence (low → high)</option>
                     <option value="missedToday">Missed today (high → low)</option>
@@ -320,13 +452,36 @@ export default function DoctorDashboard() {
                       <td className="py-2 pr-4 text-slate-700">{p.ActiveRxCount}</td>
                       <td className="py-2 pr-4 text-slate-700">{p.MissedTodayCount}</td>
                       <td className="py-2 pr-0 text-right">
-                        <button
-                          onClick={() => navigate(`/prescriptions?patientId=${p.PatientID}`)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                        >
-                          Manage
-                          <ChevronRight className="h-4 w-4 text-slate-400" />
-                        </button>
+                        <div className="flex justify-end gap-1.5">
+                          {canEmail ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEmailPatient({
+                                  id: p.PatientID,
+                                  name: `${p.FirstName} ${p.LastName}`,
+                                });
+                                setEmailSubject('Message from your care team');
+                                setEmailBody('');
+                                setEmailErr(null);
+                                setEmailSuccess(null);
+                                setEmailTo('');
+                              }}
+                              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                              title="Email patient"
+                            >
+                              <Mail className="h-4 w-4 text-slate-500" />
+                              Email
+                            </button>
+                          ) : null}
+                          <button
+                            onClick={() => navigate(`/prescriptions?patientId=${p.PatientID}`)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          >
+                            Manage
+                            <ChevronRight className="h-4 w-4 text-slate-400" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -336,6 +491,130 @@ export default function DoctorDashboard() {
           </div>
         </>
       ) : null}
+
+      {emailPatient && (
+        <Modal title={`Email ${emailPatient.name}`} onClose={closeEmailModal} size="max-w-lg">
+          {emailSuccess ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-950">
+                <p className="font-semibold text-teal-900">Message sent successfully</p>
+                <p className="mt-1 text-xs text-teal-800/90">
+                  <span className="font-medium">To:</span> {emailSuccess.to}
+                </p>
+                {emailSuccess.delivery === 'smtp' ? (
+                  <p className="mt-2 text-xs text-teal-800/90">
+                    Handed off to your SMTP server. Check the recipient inbox (and spam).
+                  </p>
+                ) : null}
+                {emailSuccess.delivery === 'ethereal' && emailSuccess.previewUrl ? (
+                  <div className="mt-3 space-y-2 text-xs text-teal-800/90">
+                    <p>
+                      Dev mode uses Ethereal: mail never goes to a real inbox. Open the preview link to see the full
+                      message.
+                    </p>
+                    <a
+                      href={emailSuccess.previewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex font-semibold text-teal-700 underline hover:text-teal-900"
+                    >
+                      Open email preview (new tab)
+                    </a>
+                  </div>
+                ) : null}
+                {emailSuccess.delivery === 'ethereal' && !emailSuccess.previewUrl ? (
+                  <p className="mt-2 text-xs text-teal-800/90">
+                    Ethereal did not return a preview URL — check the API terminal for details.
+                  </p>
+                ) : null}
+                {emailSuccess.delivery === 'console' ? (
+                  <p className="mt-2 text-xs text-teal-800/90">
+                    Console-only mode (<code className="rounded bg-teal-100/80 px-1">MAIL_CONSOLE_ONLY=1</code>) or
+                    Ethereal unreachable — see the API server terminal for the message text.
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={closeEmailModal}
+                  className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-slate-500">
+                Default address loads from the patient record; change <strong>Send to</strong> for class demos.
+                With no SMTP in <code className="rounded bg-slate-100 px-1">.env</code>, the API uses Ethereal (fake
+                inbox + preview link after send).
+              </p>
+              {emailErr && (
+                <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{emailErr}</div>
+              )}
+              <label htmlFor="doctor-email-to" className="mt-3 block text-xs font-medium text-slate-700">
+                Send to
+              </label>
+              <input
+                id="doctor-email-to"
+                type="email"
+                autoComplete="email"
+                placeholder="patient@example.com"
+                title="Recipient email address"
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                value={emailTo}
+                onChange={(e) => setEmailTo(e.target.value)}
+              />
+              {!emailToValid && (
+                <p className="mt-1 text-xs text-red-600">Enter a valid email or clear the field to use the patient record.</p>
+              )}
+              <label htmlFor="doctor-email-subject" className="mt-3 block text-xs font-medium text-slate-700">
+                Subject
+              </label>
+              <input
+                id="doctor-email-subject"
+                type="text"
+                placeholder="Subject line"
+                title="Email subject"
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+              />
+              <label htmlFor="doctor-email-body" className="mt-3 block text-xs font-medium text-slate-700">
+                Message
+              </label>
+              <textarea
+                id="doctor-email-body"
+                placeholder="Write your message…"
+                title="Email body"
+                className="mt-1 min-h-[120px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+              />
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeEmailModal}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={emailSending || !emailSubject.trim() || !emailBody.trim() || !emailToValid}
+                  onClick={handleSendEmail}
+                  className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+                >
+                  {emailSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                  Send
+                </button>
+              </div>
+            </>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }

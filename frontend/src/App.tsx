@@ -55,7 +55,7 @@ export default function App() {
           <Route
             path="dashboard"
             element={
-              <RequireRole anyOf={['admin', 'patient']}>
+              <RequireRole anyOf={['patient']}>
                 <Dashboard />
               </RequireRole>
             }
@@ -71,7 +71,7 @@ export default function App() {
           <Route
             path="doctor-dashboard"
             element={
-              <RequireRole anyOf={['admin', 'doctor']}>
+              <RequireRole anyOf={['doctor']}>
                 <DoctorDashboard />
               </RequireRole>
             }
@@ -79,7 +79,7 @@ export default function App() {
           <Route
             path="pharmacy-tech"
             element={
-              <RequireRole anyOf={['admin', 'pharmacy_tech']}>
+              <RequireRole anyOf={['pharmacy_tech']}>
                 <PharmacyTechDashboard />
               </RequireRole>
             }
@@ -87,7 +87,7 @@ export default function App() {
           <Route
             path="secretary"
             element={
-              <RequireRole anyOf={['admin', 'secretary']}>
+              <RequireRole anyOf={['secretary']}>
                 <SecretaryDashboard />
               </RequireRole>
             }

@@ -1,13 +1,12 @@
 import {
   AlertCircle,
   CalendarDays,
-  ChevronDown,
   Loader2,
   TrendingUp,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import MedicationCard from '../components/MedicationCard';
-import { getAdherence, getDailySchedule, getPatients } from '../services/api';
+import { getAdherence, getDailySchedule, getPatient } from '../services/api';
 import type { AdherenceSummary, DoseLog, Patient, ScheduledMedication } from '../types';
 import { useAuth } from '../auth/AuthContext';
 
@@ -38,16 +37,39 @@ export default function Dashboard() {
   const [adherence, setAdherence] = useState<AdherenceSummary | null>(null);
   const [adherenceLoading, setAdherenceLoading] = useState(false);
 
-  // Load patient list on mount
+  // Patient-only route: load this user's linked patient record.
   useEffect(() => {
-    getPatients()
-      .then((data) => {
-        setPatients(data);
-        if (data.length > 0) setSelectedPatientId(data[0].PatientID);
-      })
-      .catch(() => setError('Failed to load patients.'))
-      .finally(() => setPatientsLoading(false));
-  }, []);
+    if (!user) return;
+
+    let cancelled = false;
+    setPatientsLoading(true);
+    setError(null);
+
+    const load = async () => {
+      if (user.patientId == null) {
+        if (!cancelled) {
+          setError('This account is not linked to a patient profile.');
+          setPatientsLoading(false);
+        }
+        return;
+      }
+      try {
+        const p = await getPatient(user.patientId);
+        if (cancelled) return;
+        setPatients([p]);
+        setSelectedPatientId(p.PatientID);
+      } catch {
+        if (!cancelled) setError('Failed to load your profile.');
+      } finally {
+        if (!cancelled) setPatientsLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // Load schedule whenever the selected patient changes
   useEffect(() => {
@@ -81,7 +103,7 @@ export default function Dashboard() {
     );
   }, []);
 
-  const canLogDose = user?.roles.includes('patient') || user?.roles.includes('admin');
+  const canLogDose = Boolean(user?.roles.includes('patient'));
 
   const selectedPatient = patients.find((p) => p.PatientID === selectedPatientId);
 
@@ -97,7 +119,7 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center py-24 text-slate-400">
         <Loader2 className="h-6 w-6 animate-spin" />
-        <span className="ml-2 text-sm">Loading patients…</span>
+        <span className="ml-2 text-sm">Loading…</span>
       </div>
     );
   }
@@ -114,23 +136,11 @@ export default function Dashboard() {
           <h1 className="mt-1 text-2xl font-semibold text-slate-900">Daily Schedule</h1>
         </div>
 
-        {/* Patient selector */}
-        <div className="relative">
-          <label htmlFor="patient-select" className="sr-only">Select patient</label>
-          <select
-            id="patient-select"
-            value={selectedPatientId ?? ''}
-            onChange={(e) => setSelectedPatientId(Number(e.target.value))}
-            className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-          >
-            {patients.map((p) => (
-              <option key={p.PatientID} value={p.PatientID}>
-                {p.FirstName} {p.LastName}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-        </div>
+        {selectedPatient ? (
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm">
+            {selectedPatient.FirstName} {selectedPatient.LastName}
+          </div>
+        ) : null}
       </div>
 
       {/* Today's summary stats */}

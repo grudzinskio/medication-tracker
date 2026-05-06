@@ -10,11 +10,13 @@ import './models/index'; // initialises models + associations
 import authRouter from './routes/auth';
 import doctorsRouter from './routes/doctors';
 import doseLogsRouter from './routes/doseLogs';
+import medicationLookupRouter from './routes/medicationLookup';
 import medicationsRouter from './routes/medications';
 import patientsRouter from './routes/patients';
 import pharmaciesRouter from './routes/pharmacies';
 import prescriptionsRouter from './routes/prescriptions';
 import refillsRouter from './routes/refills';
+import { startAdherenceReminderJob } from './jobs/adherenceReminders';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -26,6 +28,7 @@ app.use(express.json());
 app.use('/api/auth',          authRouter);
 app.use('/api/patients',      patientsRouter);
 app.use('/api/medications',   medicationsRouter);
+app.use('/api/medication-lookup', medicationLookupRouter);
 app.use('/api/doctors',       doctorsRouter);
 app.use('/api/pharmacies',    pharmaciesRouter);
 app.use('/api/prescriptions', prescriptionsRouter);
@@ -40,6 +43,7 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
   try {
     await sequelize.authenticate();
     console.log('✓ MySQL connection established');
+    startAdherenceReminderJob();
     app.listen(PORT, () => console.log(`✓ API listening on http://localhost:${PORT}/api`));
   } catch (err) {
     console.error('✗ Unable to connect to MySQL:', err);

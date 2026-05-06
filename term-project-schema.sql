@@ -140,6 +140,30 @@ CREATE TABLE Dose_Logs (
         FOREIGN KEY (PrescriptionID) REFERENCES Prescriptions(PrescriptionID) ON DELETE CASCADE
 );
 
+-- Curated demo pairs for clinical-awareness warnings (educational only)
+CREATE TABLE Medication_Interactions (
+    InteractionID INT AUTO_INCREMENT PRIMARY KEY,
+    MedID_1 INT NOT NULL,
+    MedID_2 INT NOT NULL,
+    Note VARCHAR(500),
+    CONSTRAINT fk_medint_med1 FOREIGN KEY (MedID_1) REFERENCES Medications(MedID) ON DELETE CASCADE,
+    CONSTRAINT fk_medint_med2 FOREIGN KEY (MedID_2) REFERENCES Medications(MedID) ON DELETE CASCADE,
+    CONSTRAINT uq_med_pair UNIQUE (MedID_1, MedID_2),
+    CONSTRAINT chk_med_pair_order CHECK (MedID_1 < MedID_2)
+);
+
+-- Prescription / auth-sensitive actions (school demo audit trail)
+CREATE TABLE Audit_Logs (
+    LogID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT NOT NULL,
+    Action VARCHAR(80) NOT NULL,
+    EntityType VARCHAR(80) NOT NULL,
+    EntityID INT NULL,
+    Details VARCHAR(500),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_audit_user FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+);
+
 -- ==============================================================================
 -- 3. INDEXES FOR QUERY OPTIMIZATION
 -- ==============================================================================

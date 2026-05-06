@@ -1,9 +1,17 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import * as jwt from 'jsonwebtoken';
 import sequelize from '../db/sequelize';
 import type { JwtClaims, RoleName, UserType } from '../auth/types';
 
 const router = Router();
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.LOGIN_RATE_LIMIT_MAX ?? 60),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN ?? '8h') as jwt.SignOptions['expiresIn'];
@@ -17,7 +25,7 @@ type DbUserRow = {
   DoctorID: number | null;
 };
 
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', loginLimiter, async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body ?? {};
     if (!username || !password) {

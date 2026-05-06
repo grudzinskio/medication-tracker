@@ -4,23 +4,34 @@ import {
   ClipboardList,
   LayoutDashboard,
   Pill,
+  Shield,
   Stethoscope,
   UserRound,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
+/** Nav shown to admins — directory and catalog management only (no role dashboards). */
+const ADMIN_NAV_PATHS = new Set([
+  '/admin',
+  '/patients',
+  '/doctors',
+  '/prescriptions',
+  '/medications',
+  '/pharmacies',
+]);
+
 const navItems = [
-  { to: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
-  { to: '/admin',         label: 'Admin',         icon: LayoutDashboard },
+  { to: '/admin', label: 'Admin', icon: Shield },
+  { to: '/patients', label: 'Patients', icon: UserRound },
+  { to: '/doctors', label: 'Doctors', icon: Stethoscope },
+  { to: '/prescriptions', label: 'Prescriptions', icon: ClipboardList },
+  { to: '/medications', label: 'Medications', icon: Pill },
+  { to: '/pharmacies', label: 'Pharmacies', icon: Building2 },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/doctor-dashboard', label: 'Doctor Dashboard', icon: Stethoscope },
   { to: '/pharmacy-tech', label: 'Pharmacy Tech', icon: ClipboardList },
-  { to: '/secretary',     label: 'Secretary',     icon: UserRound },
-  { to: '/patients',      label: 'Patients',       icon: UserRound },
-  { to: '/medications',   label: 'Medications',    icon: Pill },
-  { to: '/prescriptions', label: 'Prescriptions',  icon: ClipboardList },
-  { to: '/doctors',       label: 'Doctors',        icon: Stethoscope },
-  { to: '/pharmacies',    label: 'Pharmacies',     icon: Building2 },
+  { to: '/secretary', label: 'Secretary', icon: UserRound },
 ];
 
 export default function Layout() {
@@ -30,7 +41,7 @@ export default function Layout() {
   const roles = user?.roles ?? [];
 
   const visibleNavItems = navItems.filter((item) => {
-    if (roles.includes('admin')) return true;
+    if (roles.includes('admin')) return ADMIN_NAV_PATHS.has(item.to);
     if (roles.includes('doctor')) {
       // Doctors can work with prescribing + reference data
       return ['/doctor-dashboard', '/prescriptions', '/medications', '/pharmacies'].includes(item.to);

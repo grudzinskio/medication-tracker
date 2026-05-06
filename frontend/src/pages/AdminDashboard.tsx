@@ -1,13 +1,12 @@
-import { Building2, ClipboardList, LayoutDashboard, Pill, Stethoscope, UserRound } from 'lucide-react';
+import { Building2, ClipboardList, Pill, Stethoscope, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const cards = [
-  { to: '/doctors', label: 'Doctors', desc: 'Create, edit, and remove providers.', icon: Stethoscope },
-  { to: '/patients', label: 'Patients', desc: 'Manage patient records and access.', icon: UserRound },
+  { to: '/patients', label: 'Patients', desc: 'Add and maintain patient records.', icon: UserRound },
+  { to: '/doctors', label: 'Doctors', desc: 'Add and maintain providers.', icon: Stethoscope },
   { to: '/pharmacies', label: 'Pharmacies', desc: 'Maintain pharmacy directory.', icon: Building2 },
   { to: '/medications', label: 'Medications', desc: 'Reference medication catalog.', icon: Pill },
-  { to: '/prescriptions', label: 'Prescriptions', desc: 'Oversee active prescriptions.', icon: ClipboardList },
-  { to: '/doctor-dashboard', label: 'Clinical overview', desc: 'Population adherence and alerts.', icon: LayoutDashboard },
+  { to: '/prescriptions', label: 'Prescriptions', desc: 'Create and oversee prescriptions.', icon: ClipboardList },
 ];
 
 export default function AdminDashboard() {
@@ -17,7 +16,7 @@ export default function AdminDashboard() {
         <div className="text-sm text-slate-500">Manager console</div>
         <h1 className="mt-1 text-2xl font-semibold text-slate-900">Admin</h1>
         <p className="mt-0.5 text-sm text-slate-500">
-          Manage people, reference data, and operational workflows.
+          Manage patients, providers, pharmacies, and medication records.
         </p>
       </div>
 

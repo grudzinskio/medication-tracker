@@ -25,6 +25,7 @@ LOAD_ORDER = [
     "pharmacies",
     "patients",
     "medications",
+    "medication_interactions",
     "prescriptions",
     "refills",
     "dose_logs",
@@ -36,6 +37,7 @@ CSV_TO_TABLE = {
     "pharmacies.csv": "Pharmacies",
     "patients.csv": "Patients",
     "medications.csv": "Medications",
+    "medication_interactions.csv": "Medication_Interactions",
     "prescriptions.csv": "Prescriptions",
     "refills.csv": "Refills",
     "dose_logs.csv": "Dose_Logs",
@@ -47,6 +49,7 @@ NULLABLE_COLUMNS = {
     "Pharmacies": {"Address", "Phone"},
     "Patients": set(),
     "Medications": {"GenericName", "Form", "Route", "Manufacturer", "UnitType"},
+    "Medication_Interactions": set(),
     "Prescriptions": {"Frequency", "EndDate"},
     "Refills": set(),
     "Dose_Logs": set(),
@@ -118,6 +121,7 @@ def truncate_all(conn):
     # Reverse load order = children first
     tables = [
         # Auth / RBAC
+        "Audit_Logs",
         "UserRoles",
         "Users",
         "Roles",
@@ -125,6 +129,7 @@ def truncate_all(conn):
         "Dose_Logs",
         "Refills",
         "Prescriptions",
+        "Medication_Interactions",
         "Doctors",
         "Pharmacies",
         "Patients",
