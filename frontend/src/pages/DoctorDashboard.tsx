@@ -26,6 +26,52 @@ type EmailSendSuccess = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Prefills doctor→patient emails about adherence (editable before send). */
+function defaultPatientAdherenceEmail(row: DoctorDashboardPatientRow): { subject: string; body: string } {
+  const first = row.FirstName;
+  const missedToday = row.MissedTodayCount ?? 0;
+  const missedRange = row.Missed ?? 0;
+  const pct = row.AdherencePct ?? 0;
+
+  let subject = 'Regarding your medication adherence';
+  if (missedToday > 0) {
+    subject = 'Reminder: missed medication doses';
+  } else if (pct < 80 && row.TotalDoses > 0) {
+    subject = 'Checking in on your medications';
+  }
+
+  const lines: string[] = [`Dear ${first},`, ''];
+
+  if (missedToday > 0) {
+    lines.push(
+      `You've missed medication doses recently — including ${missedToday} dose${missedToday === 1 ? '' : 's'} logged as missed today.`,
+      '',
+      'Please take your prescriptions as directed and log each dose in the Medication Tracker so we can support you safely.',
+    );
+  } else if (missedRange > 0) {
+    lines.push(
+      `Our records show missed medication doses in the selected period (${missedRange} logged as missed).`,
+      '',
+      "It's important to stay on schedule. If you're having trouble remembering doses or taking medications as prescribed, we're here to help.",
+    );
+  } else {
+    lines.push(
+      "We're reaching out about your medication routine. Please continue taking your prescriptions as directed and log doses in the Medication Tracker.",
+      '',
+      "Consistent logging helps your care team monitor how you're doing.",
+    );
+  }
+
+  lines.push(
+    '',
+    'If you have questions, side effects, or trouble accessing your medications, reply to this email or contact the office.',
+    '',
+    '- Your care team',
+  );
+
+  return { subject, body: lines.join('\n') };
+}
+
 function utcDateString(daysAgo = 0): string {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - daysAgo);
@@ -457,12 +503,13 @@ export default function DoctorDashboard() {
                             <button
                               type="button"
                               onClick={() => {
+                                const draft = defaultPatientAdherenceEmail(p);
                                 setEmailPatient({
                                   id: p.PatientID,
                                   name: `${p.FirstName} ${p.LastName}`,
                                 });
-                                setEmailSubject('Message from your care team');
-                                setEmailBody('');
+                                setEmailSubject(draft.subject);
+                                setEmailBody(draft.body);
                                 setEmailErr(null);
                                 setEmailSuccess(null);
                                 setEmailTo('');
@@ -546,11 +593,6 @@ export default function DoctorDashboard() {
             </div>
           ) : (
             <>
-              <p className="text-xs text-slate-500">
-                Default address loads from the patient record; change <strong>Send to</strong> for class demos.
-                With no SMTP in <code className="rounded bg-slate-100 px-1">.env</code>, the API uses Ethereal (fake
-                inbox + preview link after send).
-              </p>
               {emailErr && (
                 <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{emailErr}</div>
               )}

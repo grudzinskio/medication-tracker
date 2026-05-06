@@ -235,3 +235,46 @@ Slides order (headlines): **Intro → What it is → Motivation → Tech stack �
 3. **`cd backend && npm run dev`** (port **3001**) and **`cd frontend && npm run dev`** (port **5173**).
 
 Full detail: **[README.md](../README.md)**.
+
+---
+
+## 16. How I run this project (author workflow)
+
+This section documents **my** day-to-day setup so it matches the repo and avoids common pitfalls (401s, mail not sending).
+
+### Environment files
+
+- **Repository root `.env`** — Primary config for the API: MySQL (`MYSQL_*`), **`JWT_SECRET`** / **`JWT_EXPIRES_IN`**, optional **`LOGIN_RATE_LIMIT_MAX`**, **`ADHERENCE_REMINDER_CRON`**, and **email** (`SMTP_*`, **`MAIL_FROM`**). The backend loads this via `dotenv` from the project root (not `frontend/.env`).
+- **`frontend/.env` (optional)** — Set **`VITE_API_URL=http://localhost:3001/api`** if the React app should not use the default base URL.
+
+Keep secrets out of git; use **`.env.example`** as the template.
+
+### Starting the stack
+
+1. MySQL running with database created per README / schema.  
+2. **`python load_data.py --reset`** when I need a clean seeded DB (demo users in **`DEMO_LOGINS.md`**).  
+3. **`npm run dev`** in **`backend/`** (API on **3001**).  
+4. **`npm run dev`** in **`frontend/`** (Vite on **5173**, proxy or `VITE_API_URL` to API).
+
+### Authentication and the doctor dashboard
+
+- After login, the JWT is stored in **`localStorage`** under **`medication-tracker-auth`** (token + user).  
+- The fetch layer (`frontend/src/services/api.ts`) keeps a module-level bearer token. **`hydrateAuthTokenFromStorage()`** runs in **`frontend/src/main.tsx` before `createRoot(...).render`** so the first request to **`GET /api/doctors/me/dashboard`** includes **`Authorization: Bearer …`** (avoids a race where the dashboard fired before React synced token → **401 Unauthorized**).  
+- **`AuthProvider`** initializes token/user from the same storage key on first paint.
+
+### Email (doctor → patient and cron reminders)
+
+- Real mail: configure **`SMTP_*`** and **`MAIL_FROM`** in **root `.env`**. For a personal Gmail address I use **Google App Password** (2FA on account → App Passwords) as **`SMTP_PASS`** (spaces stripped by the server if needed). **`MAIL_FROM`** should match the sending identity my provider allows (for example `Medication Tracker <you@gmail.com>` with Gmail SMTP).  
+- With SMTP unset, dev defaults to **Ethereal** (fake inbox + preview URL in the UI after send) or **`MAIL_CONSOLE_ONLY=1`** to print messages in the API terminal only.  
+- **`POST /api/doctors/me/email-patient`** sends from the logged-in doctor context; the **Doctor Dashboard** “Email” action opens a modal with **subject and body prefilled** with an adherence-focused template (missed doses today / period / general check-in) that I can edit before sending.
+
+### Extra-credit style features in this repo (report angles)
+
+- **Medication lookup:** **`GET /api/medication-lookup`** (OpenFDA-backed proxy + cache); Medications UI uses it for suggestions.  
+- **Clinical awareness:** **`GET /api/patients/:id/clinical-warnings`** (seeded interactions + duplicate therapy hints); prescriptions UI shows a banner when relevant.  
+- **Audit trail:** **`Audit_Logs`** written on sensitive prescription and doctor-email actions.  
+- **CSV export** on the doctor dashboard; **login rate limit** on **`POST /api/auth/login`**.
+
+### Browser noise while debugging
+
+Console messages from **`filler.js`**, **`contents.*.js`**, “Receiving end does not exist”, or **tabs:outgoing.message.ready** usually come from **browser extensions**, not this app.
