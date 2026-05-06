@@ -12,8 +12,6 @@ import PharmacyTechDashboard from './pages/PharmacyTechDashboard';
 import SecretaryDashboard from './pages/SecretaryDashboard';
 import Login from './pages/Login';
 import { useAuth } from './auth/AuthContext';
-import { setAuthToken } from './services/api';
-import { useEffect } from 'react';
 import RequireRole from './auth/RequireRole';
 import { useMemo } from 'react';
 
@@ -24,11 +22,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const { token, user } = useAuth();
-
-  useEffect(() => {
-    setAuthToken(token);
-  }, [token]);
+  const { user } = useAuth();
 
   const homePath = useMemo(() => {
     const roles = user?.roles ?? [];

@@ -54,6 +54,22 @@ export function setAuthToken(token: string | null) {
   authToken = token;
 }
 
+/** Same key as AuthContext — keep in sync. Call once before React render so first API calls include Bearer. */
+const AUTH_STORAGE_KEY = 'medication-tracker-auth';
+
+export function hydrateAuthTokenFromStorage(): void {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as { token?: string };
+    if (typeof parsed?.token === 'string' && parsed.token.length > 0) {
+      authToken = parsed.token;
+    }
+  } catch {
+    // ignore
+  }
+}
+
 // ─── Mock data stores ─────────────────────────────────────────────────────────
 // These are module-level arrays that act as an in-memory "database".
 // Mutations (POST / PUT / DELETE) update them so the UI stays consistent

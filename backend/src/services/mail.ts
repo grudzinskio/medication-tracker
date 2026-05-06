@@ -30,7 +30,7 @@ function getProductionTransport(): nodemailer.Transporter | null {
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_PORT === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
+    auth: { user: SMTP_USER, pass: SMTP_PASS.replace(/\s+/g, '') },
   });
   return productionTransport;
 }
