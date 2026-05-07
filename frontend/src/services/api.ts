@@ -50,6 +50,43 @@ const delay = (ms = 300) => new Promise<void>((res) => setTimeout(res, ms));
 
 let authToken: string | null = null;
 
+export class ApiError extends Error {
+  readonly status: number;
+  readonly body: string;
+
+  constructor(status: number, body: string) {
+    super(`API ${status}: ${body}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+  }
+}
+
+const unauthorizedSubscribers = new Set<() => void>();
+
+export function subscribeUnauthorized(handler: () => void): () => void {
+  unauthorizedSubscribers.add(handler);
+  return () => {
+    unauthorizedSubscribers.delete(handler);
+  };
+}
+
+function notifyUnauthorized() {
+  authToken = null;
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+  for (const fn of unauthorizedSubscribers) {
+    try {
+      fn();
+    } catch {
+      // ignore subscriber errors
+    }
+  }
+}
+
 export function setAuthToken(token: string | null) {
   authToken = token;
 }
@@ -166,7 +203,10 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`API ${res.status}: ${body}`);
+    if (res.status === 401) {
+      notifyUnauthorized();
+    }
+    throw new ApiError(res.status, body);
   }
   return res.json() as Promise<T>;
 }
