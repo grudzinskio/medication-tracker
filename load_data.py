@@ -184,6 +184,47 @@ def load_all_data(conn):
     print(f"Total rows loaded: {total}")
 
 
+def backfill_patient_primary_doctors(conn):
+    """
+    Patients CSV does not include PrimaryDoctorID; set it from prescribing history
+    (doctor with the most prescriptions per patient; ties → lower DoctorID).
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT PatientID, DoctorID, COUNT(*) AS cnt
+            FROM Prescriptions
+            GROUP BY PatientID, DoctorID
+            """
+        )
+        rows = cur.fetchall()
+
+    best: dict[int, tuple[int, int]] = {}
+    for patient_id, doctor_id, cnt in rows:
+        if patient_id not in best:
+            best[patient_id] = (doctor_id, cnt)
+            continue
+        _doc, best_cnt = best[patient_id]
+        if cnt > best_cnt or (cnt == best_cnt and doctor_id < _doc):
+            best[patient_id] = (doctor_id, cnt)
+
+    if not best:
+        return
+
+    with conn.cursor() as cur:
+        for patient_id, (doctor_id, _cnt) in best.items():
+            cur.execute(
+                """
+                UPDATE Patients
+                SET PrimaryDoctorID = %s
+                WHERE PatientID = %s AND PrimaryDoctorID IS NULL
+                """,
+                (doctor_id, patient_id),
+            )
+    conn.commit()
+    print(f"Backfilled PrimaryDoctorID for patients from Prescriptions ({len(best)} with Rx).")
+
+
 def seed_auth_demo_users(conn):
     """
     Seed demo auth users + roles.
@@ -217,24 +258,37 @@ def seed_auth_demo_users(conn):
             (admin_user_id, role_map["admin"]),
         )
 
-        # Staff demo users (non-admin)
+        cur.execute("SELECT MIN(DoctorID) FROM Doctors")
+        row = cur.fetchone()
+        default_secretary_doctor_id = int(row[0]) if row and row[0] is not None else None
+
+        # Staff demo users (non-admin). Secretary is linked to the first doctor for demo JWT doctorId.
         staff_users = [
-            ("pharmacytech", "pharmacy_tech"),
-            ("secretary", "secretary"),
+            ("pharmacytech", "pharmacy_tech", None),
+            ("secretary", "secretary", default_secretary_doctor_id),
         ]
-        for username, role in staff_users:
+        for username, role, doctor_id in staff_users:
             cur.execute(
                 """
                 INSERT IGNORE INTO Users (Username, Password, UserType, PatientID, DoctorID)
-                VALUES (%s, 'password', 'staff', NULL, NULL)
+                VALUES (%s, 'password', 'staff', NULL, %s)
                 """,
-                (username,),
+                (username, doctor_id),
             )
             cur.execute("SELECT UserID FROM Users WHERE Username = %s LIMIT 1", (username,))
             staff_user_id = cur.fetchone()[0]
             cur.execute(
                 "INSERT IGNORE INTO UserRoles (UserID, RoleID) VALUES (%s, %s)",
                 (staff_user_id, role_map[role]),
+            )
+
+        if default_secretary_doctor_id is not None:
+            cur.execute(
+                """
+                UPDATE Users SET DoctorID = %s
+                WHERE Username = 'secretary' AND UserType = 'staff'
+                """,
+                (default_secretary_doctor_id,),
             )
 
         # Patient users
@@ -298,6 +352,8 @@ def main():
         try:
             print("Loading CSV data...")
             load_all_data(conn)
+            print("Backfilling patient primary doctors...")
+            backfill_patient_primary_doctors(conn)
             print("Seeding auth demo users...")
             seed_auth_demo_users(conn)
         finally:
@@ -309,6 +365,8 @@ def main():
             truncate_all(conn)
             print("Loading CSV data...")
             load_all_data(conn)
+            print("Backfilling patient primary doctors...")
+            backfill_patient_primary_doctors(conn)
             print("Seeding auth demo users...")
             seed_auth_demo_users(conn)
         finally:

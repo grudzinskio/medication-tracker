@@ -1,9 +1,45 @@
 import { AlertCircle, Loader2, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../auth/AuthContext';
 import { getDoctors, getPatients, updatePatientPrimaryDoctor } from '../services/api';
 import type { Doctor, Patient } from '../types';
 
+/** Patient's primary first; if none yet, secretary's linked doctor; then remaining A→Z by name. */
+function doctorsOrderedForPatientRow(
+  allDoctors: Doctor[],
+  patientPrimaryDoctorId: number | null | undefined,
+  secretaryBossDoctorId: number | null | undefined,
+): Doctor[] {
+  const byId = new Map(allDoctors.map((d) => [d.DoctorID, d]));
+  const orderedIds: number[] = [];
+
+  const appendUnique = (id: number | null | undefined) => {
+    if (id == null || !Number.isFinite(Number(id))) return;
+    const n = Number(id);
+    if (!byId.has(n) || orderedIds.includes(n)) return;
+    orderedIds.push(n);
+  };
+
+  appendUnique(patientPrimaryDoctorId);
+  if (patientPrimaryDoctorId == null) appendUnique(secretaryBossDoctorId);
+
+  const preferred = new Set(orderedIds);
+  const rest = allDoctors
+    .filter((d) => !preferred.has(d.DoctorID))
+    .sort((a, b) =>
+      `${a.LastName} ${a.FirstName}`.localeCompare(`${b.LastName} ${b.FirstName}`, undefined, {
+        sensitivity: 'base',
+      }),
+    );
+
+  return [...orderedIds.map((id) => byId.get(id)!), ...rest];
+}
+
 export default function SecretaryDashboard() {
+  const { user } = useAuth();
+  const secretaryDoctorId =
+    user?.roles.includes('secretary') && user.doctorId != null ? user.doctorId : null;
+
   const [patients, setPatients] = useState<Patient[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +124,11 @@ export default function SecretaryDashboard() {
           <tbody className="divide-y divide-slate-100">
             {patients.map((p) => {
               const saving = savingIds.has(p.PatientID);
+              const doctorsForRow = doctorsOrderedForPatientRow(
+                doctors,
+                p.PrimaryDoctorID,
+                secretaryDoctorId,
+              );
               return (
                 <tr key={p.PatientID} className="transition-colors hover:bg-slate-50">
                   <td className={tdCls}>
@@ -110,7 +151,7 @@ export default function SecretaryDashboard() {
                         title="Primary doctor"
                       >
                         <option value="">Unassigned</option>
-                        {doctors.map((d) => (
+                        {doctorsForRow.map((d) => (
                           <option key={d.DoctorID} value={d.DoctorID}>
                             {doctorNameById.get(d.DoctorID) ?? `Dr. ${d.FirstName} ${d.LastName}`}
                           </option>
